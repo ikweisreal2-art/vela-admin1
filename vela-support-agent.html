@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vela Support Agent — Live Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --black: #080808;
+    --void: #0c0c0c;
+    --surface: #111111;
+    --surface2: #161616;
+    --border: rgba(255,255,255,0.07);
+    --border-lit: rgba(255,255,255,0.15);
+    --gold: #c9a84c;
+    --gold-dim: rgba(201,168,76,0.12);
+    --white: #f0ede8;
+    --muted: rgba(240,237,232,0.45);
+    --dim: rgba(240,237,232,0.12);
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* GRID BG */
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* SETUP SCREEN */
+  #setup-screen {
+    position: fixed; inset: 0; z-index: 10;
+    background: var(--black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  .setup-box {
+    width: 100%; max-width: 680px;
+    border: 1px solid var(--border-lit);
+    background: var(--surface);
+    position: relative;
+  }
+  .setup-box::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+  .setup-header {
+    padding: 28px 32px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .setup-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 6px;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+  .setup-logo span { color: var(--gold); }
+  .setup-step-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .setup-body { padding: 32px; }
+
+  /* STEP 1 — Templates */
+  #step1 { display: block; }
+  #step2 { display: none; }
+
+  .setup-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+  .setup-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  .templates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .template-card {
+    border: 1px solid var(--border);
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .template-card:hover { border-color: var(--border-lit); background: var(--surface2); }
+  .template-card.selected { border-color: var(--gold); background: var(--gold-dim); }
+  .template-card.selected::after {
+    content: '✓';
+    position: absolute; top: 12px; right: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--gold);
+  }
+  .template-icon {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+  .template-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+  .template-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .divider-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    color: var(--dim);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+  .divider-row::before, .divider-row::after {
+    content: ''; flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .custom-option {
+    border: 1px dashed var(--border-lit);
+    padding: 14px 18px;
+    cursor: pointer;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .custom-option:hover { border-color: var(--gold); color: var(--gold); }
+
+  .setup-footer {
+    padding: 20px 32px 28px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .btn-next {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    padding: 13px 32px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .btn-next.enabled { opacity: 1; pointer-events: auto; }
+  .btn-next.enabled:hover { background: #e0ba5a; }
+
+  /* STEP 2 — Custom form */
+  .form-row { margin-bottom: 18px; }
+  .form-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--void);
+    border: 1px solid var(--border-lit);
+    padding: 12px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--dim); }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
+  .form-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  .form-select { appearance: none; cursor: pointer; }
+  .form-select option { background: var(--surface); }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* CHAT SCREEN */
+  #chat-screen {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+  #chat-screen.active { display: flex; }
+
+  /* CHAT HEADER */
+  .chat-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .chat-header-left {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .agent-avatar {
+    width: 40px; height: 40px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--gold);
+  }
+  .agent-info-header { }
+  .agent-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+  .agent-status {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    background: #4ade80;
+    border-radius: 50%;
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .chat-header-right {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .reconfigure-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border-lit);
+    color: var(--muted);
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .reconfigure-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .header-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 4px;
+    color: var(--dim);
+  }
+  .header-logo span { color: var(--gold); }
+
+  /* MESSAGES */
+  .messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+  .messages-area::-webkit-scrollbar { width: 4px; }
+  .messages-area::-webkit-scrollbar-track { background: transparent; }
+  .messages-area::-webkit-scrollbar-thumb { background: var(--border-lit); }
+
+  .msg-row {
+    display: flex;
+    gap: 12px;
+    max-width: 720px;
+  }
+  .msg-row.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg-row.agent { align-self: flex-start; }
+
+  .msg-avatar {
+    width: 32px; height: 32px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  .msg-row.agent .msg-avatar {
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+  }
+  .msg-row.user .msg-avatar {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-lit);
+    color: var(--muted);
+  }
+
+  .msg-bubble {
+    padding: 14px 18px;
+    font-size: 14px;
+    line-height: 1.65;
+    max-width: 560px;
+  }
+  .msg-row.agent .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 2px solid rgba(201,168,76,0.4);
+    color: var(--white);
+  }
+  .msg-row.user .msg-bubble {
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--white);
+    text-align: right;
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: flex; align-items: center; gap: 4px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 2px solid rgba(201,168,76,0.4);
+  }
+  .typing-dot {
+    width: 5px; height: 5px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: typing 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
+    40% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* SUGGESTIONS */
+  .suggestions-area {
+    padding: 0 24px 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .suggestion-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 7px 14px;
+    border: 1px solid var(--border-lit);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .suggestion-pill:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* INPUT */
+  .input-area {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .input-row {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border-lit);
+    transition: border-color 0.2s;
+  }
+  .input-row:focus-within { border-color: var(--gold); }
+  .chat-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 14px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--white);
+    outline: none;
+  }
+  .chat-input::placeholder { color: var(--dim); }
+  .send-btn {
+    background: var(--gold);
+    border: none;
+    padding: 14px 20px;
+    cursor: pointer;
+    color: var(--black);
+    font-size: 16px;
+    transition: background 0.2s;
+    display: flex; align-items: center;
+  }
+  .send-btn:hover { background: #e0ba5a; }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Typewriter */
+  .typewriter::after {
+    content: '|';
+    animation: blink 0.7s infinite;
+    color: var(--gold);
+    margin-left: 1px;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-box" style="border:none;background:transparent;">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#c9a84c,transparent);"></div>
+      <div class="setup-header">
+        <div class="setup-logo">VE<span>L</span>A</div>
+        <div class="setup-step-label" id="step-label">Step 1 of 3 — Choose an agent</div>
+      </div>
+
+      <!-- STEP 0 — Agent type picker -->
+      <div id="step0">
+        <div class="setup-body">
+          <div class="setup-title">Which agent?</div>
+          <div class="setup-subtitle">Each VELA agent is purpose-built for a specific role. Pick one to demo.</div>
+          <div class="templates">
+            <div class="template-card" onclick="selectAgentType('support', this)">
+              <div class="template-icon">🤖</div>
+              <div class="template-name">Support Agent</div>
+              <div class="template-desc">24/7 customer support — handles tickets, FAQs, escalations</div>
+            </div>
+            <div class="template-card" onclick="selectAgentType('sales', this)">
+              <div class="template-icon">📤</div>
+              <div class="template-name">Sales Agent</div>
+              <div class="template-desc">Outreach, lead qualification, follow-up sequences</div>
+            </div>
+            <div class="template-card" onclick="selectAgentType('ops', this)">
+              <div class="template-icon">⚙️</div>
+              <div class="template-name">Ops Agent</div>
+              <div class="template-desc">Internal workflows, reporting, scheduling, task routing</div>
+            </div>
+          </div>
+        </div>
+        <div class="setup-footer">
+          <button class="btn-next" id="agent-type-btn" onclick="goStep1()">Next →</button>
+        </div>
+      </div>
+
+      <!-- STEP 1 — Template picker -->
+      <div id="step1" style="display:none;">
+        <div class="setup-body">
+          <div class="setup-title" id="step1-title">What kind of business?</div>
+          <div class="setup-subtitle">Pick a template and VELA configures the agent automatically.</div>
+          <div class="templates" id="template-grid"></div>
+          <div class="divider-row">or</div>
+          <div class="custom-option" onclick="goStep2()">Configure Custom Business →</div>
+        </div>
+        <div class="setup-footer" style="justify-content:space-between;">
+          <button class="btn-next" style="background:transparent;border:1px solid var(--border-lit);color:var(--muted);opacity:1;pointer-events:auto;" onclick="goStep0()">← Back</button>
+          <button class="btn-next" id="next-btn" onclick="launchFromTemplate()">Launch Agent →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2 — Custom config -->
+      <div id="step2" style="display:none;">
+        <div class="setup-body">
+          <div class="setup-title">Configure Your Agent</div>
+          <div class="setup-subtitle">VELA will train on this information and deploy your agent in seconds.</div>
+          <div class="form-row-2">
+            <div class="form-row">
+              <label class="form-label">Business Name</label>
+              <input class="form-input" id="biz-name" placeholder="Meridian Co." type="text">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Industry</label>
+              <input class="form-input" id="biz-industry" placeholder="Logistics" type="text">
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Agent Tone</label>
+            <select class="form-select" id="biz-tone">
+              <option value="professional">Professional & precise</option>
+              <option value="friendly">Friendly & warm</option>
+              <option value="concise">Concise & direct</option>
+              <option value="luxury">Luxury & refined</option>
+            </select>
+          </div>
+          <div class="form-row" id="faqs-row">
+            <label class="form-label" id="faqs-label">Key FAQs (one per line)</label>
+            <textarea class="form-textarea" id="biz-faqs" placeholder="What are your hours?&#10;Do you offer refunds?&#10;How do I track my order?"></textarea>
+          </div>
+        </div>
+        <div class="setup-footer" style="justify-content:space-between;">
+          <button class="btn-next" style="background:transparent;border:1px solid var(--border-lit);color:var(--muted);opacity:1;pointer-events:auto;" onclick="goStep1FromCustom()">← Back</button>
+          <button class="btn-next enabled" onclick="launchCustom()">Launch Agent →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT SCREEN -->
+<div id="chat-screen">
+  <div class="chat-header">
+    <div class="chat-header-left">
+      <div class="agent-avatar" id="av">AX</div>
+      <div class="agent-info-header">
+        <div class="agent-name" id="agent-display-name">VELA Support</div>
+        <div class="agent-status">
+          <div class="status-dot"></div>
+          <span>Online — powered by VELA</span>
+        </div>
+      </div>
+    </div>
+    <div class="chat-header-right">
+      <a href="/pricing" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:var(--gold);color:var(--black);padding:8px 16px;text-decoration:none;font-weight:500;">Get Started →</a>
+      <button class="reconfigure-btn" onclick="reconfigure()">↺ Reconfigure</button>
+      <div class="header-logo">VE<span>L</span>A</div>
+    </div>
+  </div>
+
+  <div class="messages-area" id="messages"></div>
+
+  <div class="suggestions-area" id="suggestions"></div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <input class="chat-input" id="chat-input" placeholder="Type a message…" onkeydown="handleKey(event)">
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let agentConfig = {};
+  let conversationHistory = [];
+  let selectedTemplate = null;
+  let selectedAgentType = null;
+  let isTyping = false;
+
+  // ── AGENT TYPE TEMPLATES ──────────────────────────────────────────
+  const AGENT_TYPES = {
+    support: {
+      label: 'Support Agent',
+      step1Title: 'What kind of business?',
+      templates: {
+        ecommerce: { icon:'🛍️', name:'E-Commerce', desc:'Orders, returns, shipping, product questions',
+          system: `You are VELA Support, an AI customer support agent for an e-commerce store. Help customers with orders, returns, shipping, and product questions. Be helpful, concise, and professional. Keep responses under 3 sentences when possible.`,
+          suggestions: ["Where's my order?", "How do I return an item?", "What's your refund policy?", "Do you offer free shipping?"],
+          welcome: `Hi there! I'm your VELA Support agent. How can I help you today?` },
+        realestate: { icon:'🏠', name:'Real Estate', desc:'Properties, viewings, mortgage FAQs',
+          system: `You are VELA Support for a real estate agency. Help clients with property inquiries, viewing bookings, and mortgage FAQs. Be warm, knowledgeable, and professional.`,
+          suggestions: ["What properties are available?", "How do I book a viewing?", "What areas do you cover?", "Can you help with mortgages?"],
+          welcome: `Hello! I'm your property assistant. What can I help you find today?` },
+        clinic: { icon:'🏥', name:'Clinic', desc:'Appointments, services, insurance, hours',
+          system: `You are VELA Support for a medical clinic. Help patients with appointments, service info, and insurance questions. Be empathetic and professional. For medical advice, always recommend they speak with a provider.`,
+          suggestions: ["How do I book an appointment?", "What insurance do you accept?", "What are your opening hours?", "Do you have weekend slots?"],
+          welcome: `Hello! I'm here to help you with bookings and clinic information. How can I assist?` },
+        restaurant: { icon:'🍽️', name:'Restaurant', desc:'Reservations, menu, hours, dietary info',
+          system: `You are VELA Support for a restaurant. Help guests with reservations, menu questions, dietary requirements, and hours. Be friendly and welcoming.`,
+          suggestions: ["I'd like to make a reservation", "Do you have vegetarian options?", "What are your opening hours?", "Do you cater for large groups?"],
+          welcome: `Welcome! I'm your restaurant assistant. How can I help you today?` }
+      }
+    },
+    sales: {
+      label: 'Sales Agent',
+      step1Title: 'What industry are you targeting?',
+      templates: {
+        saas: { icon:'💻', name:'SaaS / Tech', desc:'B2B software, tools, platforms',
+          system: `You are VELA Sales, an AI sales assistant for a B2B SaaS company. You qualify leads, answer product questions, handle objections, and book demos. Be confident, consultative, and focused on ROI. Keep responses sharp and under 3 sentences.`,
+          suggestions: ["What does your software do?", "How much does it cost?", "Can I book a demo?", "How does it compare to competitors?"],
+          welcome: `Hey! I'm VELA Sales. Looking to learn more, or ready to book a demo?` },
+        agency: { icon:'🎯', name:'Agency', desc:'Marketing, creative, consulting services',
+          system: `You are VELA Sales for a marketing agency. You handle inbound inquiries, qualify prospects, and guide them toward a discovery call. Be consultative and outcome-focused.`,
+          suggestions: ["What services do you offer?", "What results do you get?", "How much do you charge?", "Can we get on a call?"],
+          welcome: `Hi! I'm here to help you figure out if we're the right fit. What are you looking to achieve?` },
+        logistics: { icon:'🚚', name:'Logistics', desc:'Freight, supply chain, B2B shipping',
+          system: `You are VELA Sales for a logistics company. You handle inbound freight inquiries, qualify shipment needs, and move prospects toward a quote. Be efficient and professional.`,
+          suggestions: ["Can you handle international freight?", "What's your pricing model?", "How quickly can you move goods?", "Can I get a quote?"],
+          welcome: `Hello! I can help with freight inquiries and quotes. What are you shipping?` },
+        finance: { icon:'📊', name:'Finance / Insurance', desc:'B2B financial services and products',
+          system: `You are VELA Sales for a financial services firm. You handle inbound inquiries, qualify leads, and guide them toward a consultation. Be professional, compliant in tone, and helpful.`,
+          suggestions: ["What services do you offer?", "Who do you typically work with?", "Can I book a consultation?", "What are your fees?"],
+          welcome: `Hello! I'm here to help you explore our financial services. What are you looking for?` }
+      }
+    },
+    ops: {
+      label: 'Ops Agent',
+      step1Title: 'What kind of team?',
+      templates: {
+        startup: { icon:'🚀', name:'Startup', desc:'Fast-moving small teams, wearing many hats',
+          system: `You are VELA Ops, an AI operations assistant for a startup. You help with task management, scheduling, reporting, and internal coordination. Be efficient, direct, and action-oriented. Always propose next steps.`,
+          suggestions: ["What's on my plate today?", "Generate a weekly digest", "Schedule a team sync", "What tasks are overdue?"],
+          welcome: `VELA Ops online. What do you need to get done?` },
+        agency: { icon:'🏢', name:'Agency / Studio', desc:'Client work, project delivery, team ops',
+          system: `You are VELA Ops for a creative agency. You help manage project timelines, client deliverables, team capacity, and internal reporting. Be organised and proactive.`,
+          suggestions: ["What projects are due this week?", "Generate a client status report", "Who has bandwidth?", "Send a team update"],
+          welcome: `VELA Ops here. What do you need managed today?` },
+        ecommerce: { icon:'📦', name:'E-Commerce', desc:'Inventory, fulfilment, operations',
+          system: `You are VELA Ops for an e-commerce operation. You help with inventory tracking, fulfilment status, supplier comms, and ops reporting. Be precise and data-focused.`,
+          suggestions: ["What's our stock status?", "Any fulfilment delays?", "Generate an inventory report", "What needs reordering?"],
+          welcome: `VELA Ops active. What operational data do you need?` },
+        enterprise: { icon:'🏗️', name:'Enterprise', desc:'Large org, cross-department coordination',
+          system: `You are VELA Ops for a large enterprise organisation. You handle cross-department coordination, executive reporting, scheduling, and workflow automation. Be formal, thorough, and precise.`,
+          suggestions: ["Generate an executive digest", "Schedule a stakeholder meeting", "What's pending approval?", "Summarise this week's ops"],
+          welcome: `VELA Ops connected. How can I assist operations today?` }
+      }
+    }
+  };
+
+  // ── NAVIGATION ────────────────────────────────────────────────────
+  function show(id) {
+    ['step0','step1','step2'].forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.style.display = s === id ? 'block' : 'none';
+    });
+  }
+
+  function selectAgentType(type, el) {
+    selectedAgentType = type;
+    document.querySelectorAll('#step0 .template-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('agent-type-btn').classList.add('enabled');
+  }
+
+  function goStep1() {
+    if (!selectedAgentType) return;
+    selectedTemplate = null;
+    const agent = AGENT_TYPES[selectedAgentType];
+    document.getElementById('step1-title').textContent = agent.step1Title;
+    document.getElementById('step-label').textContent = 'Step 2 of 3 — Choose a template';
+    document.getElementById('next-btn').classList.remove('enabled');
+
+    // Render templates for this agent type
+    const grid = document.getElementById('template-grid');
+    grid.innerHTML = Object.entries(agent.templates).map(([id, t]) => `
+      <div class="template-card" onclick="selectTemplate('${id}', this)">
+        <div class="template-icon">${t.icon}</div>
+        <div class="template-name">${t.name}</div>
+        <div class="template-desc">${t.desc}</div>
+      </div>`).join('');
+    show('step1');
+  }
+
+  function goStep0() {
+    selectedTemplate = null;
+    document.getElementById('step-label').textContent = 'Step 1 of 3 — Choose an agent';
+    show('step0');
+  }
+
+  function goStep2() {
+    document.getElementById('step-label').textContent = 'Step 3 of 3 — Configure your agent';
+    // Update placeholder labels per agent type
+    const labelMap = {
+      support: 'Key FAQs (one per line)',
+      sales: 'Key selling points / objections to handle',
+      ops: 'Key workflows or recurring tasks'
+    };
+    document.getElementById('faqs-label').textContent = labelMap[selectedAgentType] || 'Key Information';
+    show('step2');
+  }
+
+  function goStep1FromCustom() {
+    document.getElementById('step-label').textContent = 'Step 2 of 3 — Choose a template';
+    show('step1');
+  }
+
+  function selectTemplate(id, el) {
+    selectedTemplate = id;
+    document.querySelectorAll('#template-grid .template-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('next-btn').classList.add('enabled');
+  }
+
+  // ── LAUNCH ────────────────────────────────────────────────────────
+  function launchFromTemplate() {
+    if (!selectedTemplate || !selectedAgentType) return;
+    const t = AGENT_TYPES[selectedAgentType].templates[selectedTemplate];
+    agentConfig = {
+      system: t.system,
+      name: `VELA ${AGENT_TYPES[selectedAgentType].label.split(' ')[0]}`,
+      agentType: selectedAgentType,
+      suggestions: t.suggestions,
+      welcomeMsg: t.welcome
+    };
+    launchChat();
+  }
+
+  function launchCustom() {
+    const name = document.getElementById('biz-name').value || 'your business';
+    const industry = document.getElementById('biz-industry').value || 'business';
+    const tone = document.getElementById('biz-tone').value;
+    const extra = document.getElementById('biz-faqs').value;
+    const toneMap = { professional:'professional and precise', friendly:'friendly and warm', concise:'concise and direct', luxury:'refined, sophisticated, and premium' };
+    const agentRoleMap = {
+      support: `customer support agent for ${name}. Help customers with questions and issues.`,
+      sales: `sales agent for ${name}. Qualify leads, answer product questions, and guide prospects toward a meeting or purchase.`,
+      ops: `operations assistant for ${name}. Help with task management, reporting, scheduling, and internal coordination.`
+    };
+    const agentLabel = AGENT_TYPES[selectedAgentType].label;
+    agentConfig = {
+      system: `You are VELA ${agentLabel.split(' ')[0]}, an AI ${agentRoleMap[selectedAgentType]} Be ${toneMap[tone]}.${extra ? ` Key information:\n${extra}` : ''} Keep responses clear and concise.`,
+      name: `${name} ${agentLabel.split(' ')[0]}`,
+      agentType: selectedAgentType,
+      suggestions: ["How can you help me?", "Tell me more", "What can you do?", "Let's get started"],
+      welcomeMsg: `Hi! I'm the VELA ${agentLabel.split(' ')[0]} for ${name}. How can I help?`
+    };
+    launchChat();
+  }
+
+  function launchChat() {
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('chat-screen').classList.add('active');
+    document.getElementById('agent-display-name').textContent = agentConfig.name;
+    renderSuggestions(agentConfig.suggestions);
+    setTimeout(() => addMessage('agent', agentConfig.welcomeMsg), 400);
+  }
+
+  // ── CHAT ──────────────────────────────────────────────────────────
+  function renderSuggestions(list) {
+    document.getElementById('suggestions').innerHTML = list.map(s =>
+      `<button class="suggestion-pill" onclick="sendSuggestion('${s.replace(/'/g, "\\'")}')">${s}</button>`
+    ).join('');
+  }
+
+  function sendSuggestion(text) {
+    document.getElementById('chat-input').value = text;
+    sendMessage();
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || isTyping) return;
+    input.value = '';
+    document.getElementById('suggestions').innerHTML = '';
+    addMessage('user', text);
+    conversationHistory.push({ role: 'user', content: text });
+    showTyping();
+    isTyping = true;
+    document.getElementById('send-btn').disabled = true;
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: agentConfig.system, messages: conversationHistory })
+      });
+      const data = await response.json();
+      const reply = data.content?.[0]?.text || "I'm having trouble connecting. Please try again.";
+      conversationHistory.push({ role: 'assistant', content: reply });
+      hideTyping();
+      addMessage('agent', reply, true);
+    } catch {
+      hideTyping();
+      addMessage('agent', "Connection issue. Please check your network and try again.");
+    }
+    isTyping = false;
+    document.getElementById('send-btn').disabled = false;
+  }
+
+  function addMessage(role, text, typewrite = false) {
+    const area = document.getElementById('messages');
+    const row = document.createElement('div');
+    row.className = `msg-row ${role}`;
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = role === 'agent' ? 'AX' : 'YOU';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    area.appendChild(row);
+    area.scrollTop = area.scrollHeight;
+    if (typewrite && role === 'agent') {
+      bubble.classList.add('typewriter');
+      let i = 0;
+      function type() {
+        if (i < text.length) { bubble.textContent = text.slice(0, ++i); area.scrollTop = area.scrollHeight; setTimeout(type, 16); }
+        else bubble.classList.remove('typewriter');
+      }
+      type();
+    } else { bubble.textContent = text; }
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function showTyping() {
+    const area = document.getElementById('messages');
+    const row = document.createElement('div');
+    row.className = 'msg-row agent'; row.id = 'typing-row';
+    row.innerHTML = `<div class="msg-avatar">AX</div><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+    area.appendChild(row);
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function hideTyping() { const tr = document.getElementById('typing-row'); if (tr) tr.remove(); }
+
+  function reconfigure() {
+    conversationHistory = []; selectedTemplate = null; selectedAgentType = null;
+    document.getElementById('messages').innerHTML = '';
+    document.getElementById('chat-screen').classList.remove('active');
+    document.getElementById('setup-screen').style.display = 'flex';
+    document.getElementById('step-label').textContent = 'Step 1 of 3 — Choose an agent';
+    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('agent-type-btn').classList.remove('enabled');
+    show('step0');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vela — Client Onboarding</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --black: #080808; --void: #0a0a0a; --surface: #111111; --surface2: #161616;
+    --border: rgba(255,255,255,0.07); --border-lit: rgba(255,255,255,0.15);
+    --gold: #c9a84c; --gold-dim: rgba(201,168,76,0.12); --gold-glow: rgba(201,168,76,0.35);
+    --white: #f0ede8; --muted: rgba(240,237,232,0.45); --dim: rgba(240,237,232,0.12);
+    --green: #4ade80;
+  }
+  html, body { min-height: 100%; }
+  body { background: var(--black); color: var(--white); font-family: 'DM Sans', sans-serif; font-weight: 300; }
+
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 52px 52px; pointer-events: none; z-index: 0;
+  }
+  .grid-bg::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,168,76,0.05) 0%, transparent 70%); }
+
+  /* HEADER */
+  header {
+    position: relative; z-index: 10;
+    padding: 20px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,8,8,0.9); backdrop-filter: blur(10px);
+  }
+  .header-logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 6px; }
+  .header-logo span { color: var(--gold); }
+  .header-step { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+
+  /* PROGRESS BAR */
+  .progress-wrap { position: relative; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 40px; }
+  .progress-steps { display: flex; max-width: 700px; margin: 0 auto; }
+  .prog-step {
+    flex: 1; padding: 14px 0; text-align: center; position: relative;
+    font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--dim); transition: color 0.3s;
+    cursor: default;
+  }
+  .prog-step.active { color: var(--gold); }
+  .prog-step.done { color: var(--muted); }
+  .prog-step::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px; background: var(--border);
+    transition: background 0.3s;
+  }
+  .prog-step.active::after { background: var(--gold); }
+  .prog-step.done::after { background: rgba(74,222,128,0.4); }
+
+  /* MAIN */
+  .main { position: relative; z-index: 1; min-height: calc(100vh - 120px); display: flex; align-items: flex-start; justify-content: center; padding: 60px 20px 80px; }
+
+  /* STEP CARD */
+  .step-card { width: 100%; max-width: 640px; background: var(--surface); border: 1px solid var(--border-lit); position: relative; }
+  .step-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--gold),transparent); }
+
+  .card-header { padding: 28px 32px 22px; border-bottom: 1px solid var(--border); }
+  .card-step-num { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+  .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 3px; margin-bottom: 4px; }
+  .card-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  .card-body { padding: 28px 32px; }
+  .card-footer { padding: 16px 32px 28px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); }
+
+  /* FORM ELEMENTS */
+  .field { margin-bottom: 18px; }
+  .field-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; display: block; }
+  .field-input, .field-select, .field-textarea {
+    width: 100%; background: var(--void); border: 1px solid var(--border-lit);
+    padding: 11px 14px; font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--white); outline: none; transition: border-color 0.2s;
+  }
+  .field-input::placeholder, .field-textarea::placeholder { color: var(--dim); }
+  .field-input:focus, .field-select:focus, .field-textarea:focus { border-color: var(--gold); }
+  .field-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  .field-select { appearance: none; cursor: pointer; }
+  .field-select option { background: var(--surface); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field-hint { font-size: 11px; color: var(--dim); margin-top: 5px; font-family: 'DM Mono', monospace; }
+
+  /* OPTION CARDS */
+  .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+  .option-card {
+    border: 1px solid var(--border); padding: 16px; cursor: pointer;
+    transition: all 0.15s; position: relative;
+  }
+  .option-card:hover { border-color: var(--border-lit); background: var(--surface2); }
+  .option-card.selected { border-color: var(--gold); background: var(--gold-dim); }
+  .option-card.selected::after { content:'✓'; position:absolute; top:10px;right:12px; font-family:'DM Mono',monospace; font-size:11px; color:var(--gold); }
+  .option-icon { font-size: 20px; margin-bottom: 8px; }
+  .option-name { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--white); margin-bottom: 3px; }
+  .option-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .option-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* TOGGLE */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border); margin-bottom: 8px; }
+  .toggle-info .toggle-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--white); margin-bottom: 1px; }
+  .toggle-info .toggle-sub { font-size: 11px; color: var(--muted); }
+  .toggle { width: 34px; height: 19px; background: var(--border-lit); border-radius: 10px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+  .toggle.on { background: var(--gold); }
+  .toggle::after { content:''; position:absolute; top:2px; left:2px; width:15px; height:15px; background: var(--black); border-radius:50%; transition:left 0.2s; }
+  .toggle.on::after { left:17px; }
+
+  /* BUTTONS */
+  .btn-next { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; background: var(--gold); color: var(--black); border: none; padding: 12px 28px; cursor: pointer; font-weight: 500; transition: background 0.2s; }
+  .btn-next:hover { background: #e0ba5a; }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-back { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; background: transparent; border: 1px solid var(--border-lit); color: var(--muted); padding: 12px 20px; cursor: pointer; transition: all 0.2s; }
+  .btn-back:hover { border-color: var(--white); color: var(--white); }
+
+  /* STEP PANELS */
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+
+  /* SUCCESS STATE */
+  #step-success { text-align: center; padding: 48px 32px; }
+  .success-icon { font-size: 48px; margin-bottom: 20px; }
+  .success-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 4px; color: var(--gold); margin-bottom: 8px; }
+  .success-sub { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 32px; max-width: 440px; margin-left: auto; margin-right: auto; }
+  .checklist { text-align: left; max-width: 360px; margin: 0 auto 32px; display: flex; flex-direction: column; gap: 10px; }
+  .check-item { display: flex; align-items: center; gap: 12px; }
+  .check-dot { width: 20px; height: 20px; background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; color: var(--green); }
+  .check-text { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; }
+  .embed-box { background: var(--void); border: 1px solid var(--border-lit); padding: 14px; text-align: left; margin-bottom: 16px; max-width: 440px; margin-left: auto; margin-right: auto; }
+  .embed-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+  .embed-code { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); line-height: 1.6; word-break: break-all; }
+  .copy-btn { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; background: transparent; border: 1px solid rgba(201,168,76,0.3); color: var(--gold); padding: 8px 18px; cursor: pointer; transition: all 0.2s; }
+  .copy-btn:hover { background: var(--gold-dim); }
+
+  @media (max-width: 600px) {
+    header { padding: 16px 20px; }
+    .progress-wrap { padding: 0 20px; }
+    .prog-step { font-size: 8px; padding: 12px 0; }
+    .main { padding: 32px 16px 60px; }
+    .card-header { padding: 22px 20px 18px; }
+    .card-body { padding: 20px 20px; }
+    .card-footer { padding: 14px 20px 22px; }
+    .field-row { grid-template-columns: 1fr; }
+    .option-grid { grid-template-columns: 1fr 1fr; }
+    .option-grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<header>
+  <div class="header-logo">VE<span>L</span>A</div>
+  <div class="header-step" id="header-step">Client Onboarding</div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-steps">
+    <div class="prog-step active" id="prog-1">Business</div>
+    <div class="prog-step" id="prog-2">Agents</div>
+    <div class="prog-step" id="prog-3">Configure</div>
+    <div class="prog-step" id="prog-4">Channels</div>
+    <div class="prog-step" id="prog-5">Review</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="step-card">
+
+    <!-- STEP 1 — Business Info -->
+    <div class="step-panel active" id="panel-1">
+      <div class="card-header">
+        <div class="card-step-num">Step 1 of 5</div>
+        <div class="card-title">Tell us about your business</div>
+        <div class="card-sub">This is how VELA will train your agents. The more detail you give, the better they perform.</div>
+      </div>
+      <div class="card-body">
+        <div class="field-row">
+          <div class="field"><label class="field-label">Business Name</label><input class="field-input" id="f-bizname" placeholder="Meridian Co."></div>
+          <div class="field"><label class="field-label">Industry</label><input class="field-input" id="f-industry" placeholder="Logistics"></div>
+        </div>
+        <div class="field"><label class="field-label">Website</label><input class="field-input" id="f-website" placeholder="https://meridian.co" type="url"></div>
+        <div class="field-row">
+          <div class="field"><label class="field-label">Your Name</label><input class="field-input" id="f-name" placeholder="Sarah Chen"></div>
+          <div class="field"><label class="field-label">Your Email</label><input class="field-input" id="f-email" placeholder="sarah@meridian.co" type="email"></div>
+        </div>
+        <div class="field"><label class="field-label">Brief Business Description</label>
+          <textarea class="field-textarea" id="f-desc" placeholder="What does your business do? Who are your customers? What problems do you solve?"></textarea>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);">Your data stays private</div>
+        <button class="btn-next" onclick="goStep(2)">Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 — Agent Selection -->
+    <div class="step-panel" id="panel-2">
+      <div class="card-header">
+        <div class="card-step-num">Step 2 of 5</div>
+        <div class="card-title">Which agents do you need?</div>
+        <div class="card-sub">Select all that apply. You can always add more later.</div>
+      </div>
+      <div class="card-body">
+        <div class="option-grid">
+          <div class="option-card selected" id="opt-support" onclick="toggleOption('support')">
+            <div class="option-icon">🤖</div>
+            <div class="option-name">Support Agent</div>
+            <div class="option-desc">Handle customer inquiries, tickets, and FAQs 24/7</div>
+          </div>
+          <div class="option-card" id="opt-sales" onclick="toggleOption('sales')">
+            <div class="option-icon">📤</div>
+            <div class="option-name">Sales Agent</div>
+            <div class="option-desc">Outreach, lead qualification, and follow-up sequences</div>
+          </div>
+          <div class="option-card" id="opt-ops" onclick="toggleOption('ops')">
+            <div class="option-icon">⚙️</div>
+            <div class="option-name">Ops Agent</div>
+            <div class="option-desc">Reporting, scheduling, and internal workflow automation</div>
+          </div>
+          <div class="option-card" id="opt-all" onclick="selectAll()">
+            <div class="option-icon">✦</div>
+            <div class="option-name">All Three</div>
+            <div class="option-desc">Full VELA suite — recommended for Growth/Enterprise</div>
+          </div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px;">Selected agents will be deployed and configured in the next steps.</div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-back" onclick="goStep(1)">← Back</button>
+        <button class="btn-next" onclick="goStep(3)">Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 — Configure -->
+    <div class="step-panel" id="panel-3">
+      <div class="card-header">
+        <div class="card-step-num">Step 3 of 5</div>
+        <div class="card-title">Configure your agents</div>
+        <div class="card-sub">Set the tone and train your agents on what matters most.</div>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label class="field-label">Agent Tone & Personality</label>
+          <select class="field-select" id="f-tone">
+            <option value="professional">Professional & precise — formal, authoritative</option>
+            <option value="friendly">Friendly & warm — approachable, conversational</option>
+            <option value="concise">Concise & direct — short answers, no fluff</option>
+            <option value="luxury">Luxury & refined — elevated, premium tone</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Key FAQs (one per line)</label>
+          <textarea class="field-textarea" id="f-faqs" placeholder="What are your hours?&#10;What's your return policy?&#10;How do I track my order?&#10;What payment methods do you accept?"></textarea>
+          <div class="field-hint">The more FAQs you provide, the fewer escalations your agents will need.</div>
+        </div>
+        <div class="field">
+          <label class="field-label">Topics to avoid</label>
+          <textarea class="field-textarea" id="f-avoid" placeholder="Competitor comparisons&#10;Pricing negotiations&#10;Legal disputes" style="min-height:60px;"></textarea>
+          <div class="field-hint">Your agent will politely redirect or escalate if these topics come up.</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-back" onclick="goStep(2)">← Back</button>
+        <button class="btn-next" onclick="goStep(4)">Next →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4 — Channels -->
+    <div class="step-panel" id="panel-4">
+      <div class="card-header">
+        <div class="card-step-num">Step 4 of 5</div>
+        <div class="card-title">Where should agents live?</div>
+        <div class="card-sub">Choose how your agents will be deployed and reached.</div>
+      </div>
+      <div class="card-body">
+        <div class="field-label" style="margin-bottom:10px;">Deployment Channels</div>
+        <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Website widget</div><div class="toggle-sub">Embed chat bubble on your website</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Email support</div><div class="toggle-sub">Route support@yourdomain.com through VELA</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">SMS support</div><div class="toggle-sub">Handle inbound texts automatically</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row" style="margin-bottom:20px;"><div class="toggle-info"><div class="toggle-label">WhatsApp</div><div class="toggle-sub">Deploy agent on WhatsApp Business</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+
+        <div class="field-label" style="margin-bottom:10px;">Notifications</div>
+        <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Human escalation alerts</div><div class="toggle-sub">Email you when agent escalates a ticket</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="toggle-row"><div class="toggle-info"><div class="toggle-label">Weekly performance digest</div><div class="toggle-sub">Summary of conversations and satisfaction every Monday</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+
+        <div class="field" style="margin-top:18px;">
+          <label class="field-label">Escalation Email</label>
+          <input class="field-input" id="f-escalation" placeholder="support@yourcompany.com" type="email">
+          <div class="field-hint">Where VELA sends tickets it can't resolve.</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-back" onclick="goStep(3)">← Back</button>
+        <button class="btn-next" onclick="goStep(5)">Review →</button>
+      </div>
+    </div>
+
+    <!-- STEP 5 — Review -->
+    <div class="step-panel" id="panel-5">
+      <div class="card-header">
+        <div class="card-step-num">Step 5 of 5</div>
+        <div class="card-title">Review & Launch</div>
+        <div class="card-sub">Everything looks right? Your agent will be live within 48 hours.</div>
+      </div>
+      <div class="card-body">
+        <div id="review-content"></div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-back" onclick="goStep(4)">← Back</button>
+        <button class="btn-next" onclick="submitOnboarding()">Launch Agents →</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="step-panel" id="panel-success">
+      <div id="step-success">
+        <div class="success-icon">✦</div>
+        <div class="success-title">You're Live.</div>
+        <div class="success-sub">Your VELA agents are configured and deploying now. You'll receive your embed code and setup confirmation within 5 minutes.</div>
+        <div class="checklist">
+          <div class="check-item"><div class="check-dot">✓</div><div class="check-text">Agent configuration received</div></div>
+          <div class="check-item"><div class="check-dot">✓</div><div class="check-text">Training data processed</div></div>
+          <div class="check-item"><div class="check-dot">✓</div><div class="check-text">Embed code generated</div></div>
+          <div class="check-item"><div class="check-dot" style="border-color:rgba(201,168,76,0.4);color:var(--gold);">→</div><div class="check-text">Agent deploying — live within 48hrs</div></div>
+        </div>
+        <div class="embed-box">
+          <div class="embed-label">Your Embed Code</div>
+          <div class="embed-code" id="success-embed-code">&lt;script src="https://vela-2.vercel.app/widget.js" data-key="vela_live_xxxx" data-agent="support"&gt;&lt;/script&gt;</div>
+        </div>
+        <button class="copy-btn" onclick="copySuccessEmbed()">Copy Embed Code</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+  const selectedAgents = new Set(['support']);
+
+  function goStep(n) {
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.prog-step').forEach((p, i) => {
+      p.classList.remove('active','done');
+      if (i + 1 < n) p.classList.add('done');
+      if (i + 1 === n) p.classList.add('active');
+    });
+    document.getElementById('panel-' + n).classList.add('active');
+    document.getElementById('header-step').textContent = `Step ${n} of 5`;
+    if (n === 5) buildReview();
+    currentStep = n;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function toggleOption(id) {
+    const el = document.getElementById('opt-' + id);
+    el.classList.toggle('selected');
+    if (el.classList.contains('selected')) selectedAgents.add(id);
+    else selectedAgents.delete(id);
+  }
+
+  function selectAll() {
+    ['support','sales','ops'].forEach(id => {
+      document.getElementById('opt-' + id).classList.add('selected');
+      selectedAgents.add(id);
+    });
+    document.getElementById('opt-all').classList.add('selected');
+  }
+
+  function buildReview() {
+    const name = document.getElementById('f-bizname').value || '—';
+    const industry = document.getElementById('f-industry').value || '—';
+    const email = document.getElementById('f-email').value || '—';
+    const tone = document.getElementById('f-tone').value;
+    const agents = [...selectedAgents].join(', ') || 'None selected';
+    const toneLabels = { professional:'Professional & precise', friendly:'Friendly & warm', concise:'Concise & direct', luxury:'Luxury & refined' };
+
+    document.getElementById('review-content').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        ${reviewRow('Business', name)}
+        ${reviewRow('Industry', industry)}
+        ${reviewRow('Contact Email', email)}
+        ${reviewRow('Agents', agents.split(', ').map(a => a.charAt(0).toUpperCase() + a.slice(1)).join(', '))}
+        ${reviewRow('Tone', toneLabels[tone] || tone)}
+        <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
+          <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">What happens next</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.7;">Your operator receives your configuration and deploys your agent within 48 hours. You'll get your embed code by email to paste on your website — it's one line of code.</div>
+        </div>
+      </div>`;
+  }
+
+  function reviewRow(label, val) {
+    return `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);flex-shrink:0;width:120px;">${label}</div>
+      <div style="font-size:13px;color:var(--white);text-align:right;">${val}</div>
+    </div>`;
+  }
+
+  function submitOnboarding() {
+    const lead = {
+      type: 'onboard',
+      name: document.getElementById('f-name').value || '',
+      email: document.getElementById('f-email').value || '',
+      business: document.getElementById('f-bizname').value || '',
+      industry: document.getElementById('f-industry').value || '',
+      agents: [...selectedAgents].join(', '),
+      tone: document.getElementById('f-tone').value || '',
+      date: new Date().toISOString(),
+      status: 'new'
+    };
+
+    // Save to database — shows in your dashboard Leads tab
+    fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(lead)
+    }).catch(() => {});
+
+    // Show success screen
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.prog-step').forEach(p => { p.classList.remove('active'); p.classList.add('done'); });
+    document.getElementById('panel-success').classList.add('active');
+    document.getElementById('header-step').textContent = '✦ Agent Deployed';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function copySuccessEmbed() {
+    const code = document.getElementById('success-embed-code').textContent;
+    navigator.clipboard.writeText(code).catch(() => {});
+    event.target.textContent = '✓ Copied';
+    setTimeout(() => event.target.textContent = 'Copy Embed Code', 2000);
+  }
+</script>
+</body>
+</html>

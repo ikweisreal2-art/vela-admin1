@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vela Widget — Embed Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --black: #080808; --surface: #111111; --surface2: #1a1a1a;
+    --border: rgba(255,255,255,0.07); --border-lit: rgba(255,255,255,0.15);
+    --gold: #c9a84c; --gold-dim: rgba(201,168,76,0.12);
+    --white: #f0ede8; --muted: rgba(240,237,232,0.45); --dim: rgba(240,237,232,0.12);
+  }
+  body { background: #0f0f0f; color: var(--white); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  /* DEMO PAGE — simulated client website */
+  .demo-site {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex; flex-direction: column;
+  }
+  .demo-nav { padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .demo-logo { font-size: 22px; font-weight: 500; color: #fff; }
+  .demo-nav-links { display: flex; gap: 28px; }
+  .demo-nav-links a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; }
+  .demo-hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 80px 40px; }
+  .demo-hero h1 { font-size: clamp(36px, 6vw, 72px); font-weight: 500; margin-bottom: 20px; color: #fff; line-height: 1.1; }
+  .demo-hero p { font-size: 18px; color: rgba(255,255,255,0.6); max-width: 540px; line-height: 1.7; margin-bottom: 36px; }
+  .demo-btn { background: #4f46e5; color: #fff; border: none; padding: 14px 32px; font-size: 15px; cursor: pointer; border-radius: 4px; }
+  .demo-label { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3); padding: 6px 16px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); z-index: 9000; }
+
+  /* ═══════════════════════════════════════════════
+     VELA WIDGET — this is the actual deliverable
+  ═══════════════════════════════════════════════ */
+
+  #vela-widget {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    z-index: 9999;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* LAUNCHER BUTTON */
+  #vela-launcher {
+    width: 56px; height: 56px;
+    background: var(--gold);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 24px rgba(201,168,76,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  #vela-launcher:hover { transform: scale(1.05); box-shadow: 0 6px 32px rgba(201,168,76,0.55); }
+  #vela-launcher svg { transition: transform 0.3s, opacity 0.2s; }
+  #vela-launcher.open .icon-chat { opacity: 0; transform: scale(0.7) rotate(20deg); }
+  #vela-launcher.open .icon-close { opacity: 1; transform: scale(1) rotate(0deg); }
+  #vela-launcher .icon-close { position: absolute; opacity: 0; transform: scale(0.7) rotate(-20deg); }
+
+  /* Notification dot */
+  #vela-notif {
+    position: absolute; top: -4px; right: -4px;
+    width: 14px; height: 14px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid #0f0f0f;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; color: #fff; font-weight: 700;
+    animation: notif-pulse 2s infinite;
+  }
+  @keyframes notif-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+
+  /* CHAT WINDOW */
+  #vela-window {
+    position: absolute;
+    bottom: 68px; right: 0;
+    width: 360px;
+    background: #0e0e0e;
+    border: 1px solid rgba(201,168,76,0.25);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,168,76,0.08);
+    display: flex; flex-direction: column;
+    transform: scale(0.92) translateY(16px);
+    transform-origin: bottom right;
+    opacity: 0; pointer-events: none;
+    transition: transform 0.25s cubic-bezier(0.34,1.2,0.64,1), opacity 0.2s;
+    max-height: 520px;
+  }
+  #vela-window.open {
+    transform: scale(1) translateY(0);
+    opacity: 1; pointer-events: all;
+  }
+  #vela-window::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), rgba(201,168,76,0.2));
+  }
+
+  /* WINDOW HEADER */
+  .aw-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; gap: 10px;
+    flex-shrink: 0;
+  }
+  .aw-avatar {
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 13px;
+    letter-spacing: 1px; color: var(--gold);
+  }
+  .aw-info { flex: 1; }
+  .aw-name { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--white); margin-bottom: 1px; }
+  .aw-status { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .aw-dot { width: 5px; height: 5px; background: #4ade80; border-radius: 50%; animation: notif-pulse 2s infinite; }
+  .aw-minimize { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; padding: 4px; transition: color 0.2s; }
+  .aw-minimize:hover { color: var(--white); }
+
+  /* MESSAGES */
+  .aw-messages {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    min-height: 0; max-height: 320px;
+    scroll-behavior: smooth;
+  }
+  .aw-messages::-webkit-scrollbar { width: 3px; }
+  .aw-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+  .aw-msg { display: flex; gap: 8px; max-width: 88%; }
+  .aw-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .aw-msg.agent { align-self: flex-start; }
+
+  .aw-bubble {
+    padding: 10px 13px; font-size: 13px; line-height: 1.55;
+    border-radius: 2px;
+  }
+  .aw-msg.agent .aw-bubble {
+    background: #181818;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-left: 2px solid rgba(201,168,76,0.35);
+    color: var(--white);
+  }
+  .aw-msg.user .aw-bubble {
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.18);
+    color: var(--white);
+  }
+
+  /* Typing dots */
+  .aw-typing { display: flex; gap: 3px; align-items: center; padding: 12px 14px; background: #181818; border: 1px solid rgba(255,255,255,0.07); border-left: 2px solid rgba(201,168,76,0.35); }
+  .aw-typing span { width: 4px; height: 4px; background: var(--gold); border-radius: 50%; animation: aw-blink 1.2s infinite; }
+  .aw-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .aw-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes aw-blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  /* SUGGESTIONS */
+  .aw-suggestions { padding: 0 12px 10px; display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
+  .aw-pill { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; padding: 5px 10px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .aw-pill:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* INPUT */
+  .aw-input-row {
+    padding: 10px 12px 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; gap: 0; flex-shrink: 0;
+  }
+  .aw-input {
+    flex: 1; background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1);
+    border-right: none; padding: 9px 13px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    color: var(--white); outline: none; transition: border-color 0.2s;
+  }
+  .aw-input::placeholder { color: rgba(255,255,255,0.2); }
+  .aw-input:focus { border-color: rgba(201,168,76,0.4); }
+  .aw-send { background: var(--gold); border: none; padding: 9px 14px; cursor: pointer; color: #000; font-size: 14px; transition: background 0.15s; flex-shrink: 0; }
+  .aw-send:hover { background: #e0ba5a; }
+  .aw-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* FOOTER BRAND */
+  .aw-brand { padding: 6px 12px 10px; text-align: center; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.15); flex-shrink: 0; }
+  .aw-brand span { color: rgba(201,168,76,0.5); }
+
+  /* MOBILE */
+  @media (max-width: 480px) {
+    #vela-window { width: calc(100vw - 24px); right: 0; bottom: 72px; }
+    #vela-widget { bottom: 16px; right: 16px; }
+  }
+
+  /* ═══════════════════════════════════════════════
+     EMBED CODE PANEL (for operator reference)
+  ═══════════════════════════════════════════════ */
+  #embed-panel {
+    position: fixed; bottom: 24px; left: 24px;
+    background: #0e0e0e; border: 1px solid rgba(255,255,255,0.1);
+    padding: 18px 20px; max-width: 320px; z-index: 8000;
+  }
+  #embed-panel::before { content:''; position:absolute; top:0;left:0;right:0; height:1px; background:linear-gradient(90deg,var(--gold),transparent); }
+  .ep-title { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+  .ep-code { background: #060606; border: 1px solid rgba(255,255,255,0.07); padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.5); line-height: 1.6; word-break: break-all; margin-bottom: 10px; }
+  .ep-copy { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; background: transparent; border: 1px solid rgba(201,168,76,0.3); color: var(--gold); padding: 7px 14px; cursor: pointer; transition: all 0.2s; width: 100%; }
+  .ep-copy:hover { background: var(--gold-dim); }
+  .ep-copied { color: #4ade80; border-color: rgba(74,222,128,0.3); }
+</style>
+</head>
+<body>
+
+<div class="demo-label">← Simulated client website with VELA widget embedded</div>
+
+<!-- Fake client site background -->
+<div class="demo-site">
+  <nav class="demo-nav">
+    <div class="demo-logo">Meridian Co.</div>
+    <div class="demo-nav-links">
+      <a href="#">Products</a>
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+    </div>
+  </nav>
+  <div class="demo-hero">
+    <h1>Enterprise Logistics,<br>Simplified.</h1>
+    <p>We move freight across 40 countries. Fast, reliable, and fully tracked from pickup to delivery.</p>
+    <button class="demo-btn">Get a Quote</button>
+  </div>
+</div>
+
+<!-- ═══ VELA WIDGET ═══ -->
+<div id="vela-widget">
+  <button id="vela-launcher" onclick="toggleWidget()" aria-label="Open chat">
+    <!-- Chat icon -->
+    <svg class="icon-chat" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    <!-- Close icon -->
+    <svg class="icon-close" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+    <div id="vela-notif">1</div>
+  </button>
+
+  <div id="vela-window">
+    <div class="aw-header">
+      <div class="aw-avatar">AX</div>
+      <div class="aw-info">
+        <div class="aw-name" id="aw-agent-name">VELA Support</div>
+        <div class="aw-status"><div class="aw-dot"></div>Online · Typically replies instantly</div>
+      </div>
+      <button class="aw-minimize" onclick="toggleWidget()">−</button>
+    </div>
+
+    <div class="aw-messages" id="aw-messages"></div>
+    <div class="aw-suggestions" id="aw-suggestions"></div>
+
+    <div class="aw-input-row">
+      <input class="aw-input" id="aw-input" placeholder="Type a message…" onkeydown="awHandleKey(event)">
+      <button class="aw-send" id="aw-send" onclick="awSend()">➤</button>
+    </div>
+    <div class="aw-brand">Powered by <span>VELA</span></div>
+  </div>
+</div>
+
+<!-- EMBED CODE PANEL -->
+<div id="embed-panel">
+  <div class="ep-title">Embed Code</div>
+  <div class="ep-code">&lt;script src="https://vela-2.vercel.app/widget.js"
+  data-key="vela_live_xxxx"
+  data-agent="support"
+  data-name="Meridian Support"&gt;&lt;/script&gt;</div>
+  <button class="ep-copy" id="ep-copy-btn" onclick="copyEmbed()">Copy Embed Code</button>
+</div>
+
+<script>
+  // ── CONFIG — operator sets these per client ──────────────────────
+  const WIDGET_CONFIG = {
+    agentName: 'Meridian Support',
+    system: `You are a helpful support agent for Meridian Co., an enterprise logistics company. Help customers with shipment tracking, quotes, delivery inquiries, and general questions. Be professional, concise, and efficient. Keep responses under 3 sentences.`,
+    suggestions: ['Track my shipment', 'Get a freight quote', 'What are your delivery times?', 'Talk to someone'],
+    welcome: `Hi there! I'm your Meridian support agent. How can I help you today?`
+  };
+
+  let widgetOpen = false;
+  let awHistory = [];
+  let awTyping = false;
+  let firstOpen = true;
+
+  function toggleWidget() {
+    widgetOpen = !widgetOpen;
+    document.getElementById('vela-window').classList.toggle('open', widgetOpen);
+    document.getElementById('vela-launcher').classList.toggle('open', widgetOpen);
+    if (widgetOpen) {
+      document.getElementById('vela-notif').style.display = 'none';
+      if (firstOpen) {
+        firstOpen = false;
+        document.getElementById('aw-agent-name').textContent = WIDGET_CONFIG.agentName;
+        renderSuggestions(WIDGET_CONFIG.suggestions);
+        setTimeout(() => awAddMessage('agent', WIDGET_CONFIG.welcome), 300);
+      }
+      setTimeout(() => document.getElementById('aw-input').focus(), 350);
+    }
+  }
+
+  function renderSuggestions(list) {
+    document.getElementById('aw-suggestions').innerHTML = list.map(s =>
+      `<button class="aw-pill" onclick="awUseSuggestion('${s.replace(/'/g,"\\'")}'">${s}</button>`
+    ).join('');
+  }
+
+  function awUseSuggestion(text) {
+    document.getElementById('aw-input').value = text;
+    awSend();
+  }
+
+  function awHandleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); awSend(); }
+  }
+
+  async function awSend() {
+    const input = document.getElementById('aw-input');
+    const text = input.value.trim();
+    if (!text || awTyping) return;
+    input.value = '';
+    document.getElementById('aw-suggestions').innerHTML = '';
+    awAddMessage('user', text);
+    awHistory.push({ role: 'user', content: text });
+    awShowTyping();
+    awTyping = true;
+    document.getElementById('aw-send').disabled = true;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: WIDGET_CONFIG.system,
+          messages: awHistory
+        })
+      });
+      const data = await res.json();
+      const reply = data.content?.[0]?.text || "I'm having trouble connecting. Please try again.";
+      awHistory.push({ role: 'assistant', content: reply });
+      awHideTyping();
+      awAddMessage('agent', reply, true);
+    } catch {
+      awHideTyping();
+      awAddMessage('agent', 'Connection issue — please try again in a moment.');
+    }
+    awTyping = false;
+    document.getElementById('aw-send').disabled = false;
+  }
+
+  function awAddMessage(role, text, typewrite = false) {
+    const area = document.getElementById('aw-messages');
+    const row = document.createElement('div');
+    row.className = `aw-msg ${role}`;
+    const bubble = document.createElement('div');
+    bubble.className = 'aw-bubble';
+    row.appendChild(bubble);
+    area.appendChild(row);
+    area.scrollTop = area.scrollHeight;
+
+    if (typewrite) {
+      let i = 0;
+      function type() {
+        if (i < text.length) { bubble.textContent = text.slice(0, ++i); area.scrollTop = area.scrollHeight; setTimeout(type, 14); }
+      }
+      type();
+    } else { bubble.textContent = text; }
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function awShowTyping() {
+    const area = document.getElementById('aw-messages');
+    const row = document.createElement('div');
+    row.className = 'aw-msg agent'; row.id = 'aw-typing';
+    row.innerHTML = `<div class="aw-typing"><span></span><span></span><span></span></div>`;
+    area.appendChild(row); area.scrollTop = area.scrollHeight;
+  }
+
+  function awHideTyping() { const t = document.getElementById('aw-typing'); if (t) t.remove(); }
+
+  function copyEmbed() {
+    const code = `<script src="https://vela-2.vercel.app/widget.js" data-key="vela_live_xxxx" data-agent="support" data-name="Meridian Support"><\/script>`;
+    navigator.clipboard.writeText(code).catch(() => {});
+    const btn = document.getElementById('ep-copy-btn');
+    btn.textContent = '✓ Copied';
+    btn.classList.add('ep-copied');
+    setTimeout(() => { btn.textContent = 'Copy Embed Code'; btn.classList.remove('ep-copied'); }, 2000);
+  }
+</script>
+</body>
+</html>

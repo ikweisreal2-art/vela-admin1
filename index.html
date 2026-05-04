@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VELA — AI Employees as a Service</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --black: #080806;
+  --white: #f0ede6;
+  --gold: #c8a96e;
+  --gold-light: #e8c98e;
+  --gold-dim: rgba(200,169,110,0.12);
+  --gold-border: rgba(200,169,110,0.2);
+  --text-dim: #6b6459;
+  --surface: #0f0e0c;
+  --surface2: #161410;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+}
+
+/* ── NOISE TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 20px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(200,169,110,0.08);
+  background: rgba(8,8,6,0.85);
+  backdrop-filter: blur(24px);
+}
+
+.nav-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 8px;
+  color: var(--gold);
+}
+
+.nav-center {
+  display: flex;
+  gap: 40px;
+}
+
+.nav-center a {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.nav-center a:hover { color: var(--white); }
+
+.nav-cta {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--black);
+  background: var(--gold);
+  border: none;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.nav-cta:hover { background: var(--gold-light); }
+
+.nav-mobile-menu {
+  display: none;
+  background: none;
+  border: 1px solid rgba(200,169,110,0.3);
+  color: var(--gold);
+  font-size: 18px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .nav-mobile-menu { display: block; }
+  .nav-cta { display: none; }
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: 120px 48px 80px;
+  position: relative;
+  overflow: hidden;
+  gap: 60px;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 100% 50%, rgba(200,169,110,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 0% 100%, rgba(200,169,110,0.03) 0%, transparent 50%);
+}
+
+.hero-grid-lines {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(200,169,110,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200,169,110,0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse at 70% 50%, black 20%, transparent 70%);
+}
+
+.hero-left { position: relative; z-index: 1; }
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.hero-eyebrow-line {
+  width: 32px;
+  height: 1px;
+  background: var(--gold);
+}
+
+.hero-eyebrow-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+.hero-h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(64px, 8vw, 104px);
+  line-height: 0.92;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.hero-h1-italic {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: clamp(52px, 6.5vw, 88px);
+  color: var(--gold);
+  display: block;
+  line-height: 1;
+}
+
+.hero-sub {
+  margin-top: 28px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  max-width: 440px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 44px;
+  flex-wrap: wrap;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: var(--black);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  padding: 16px 32px;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-gold:hover { background: var(--gold-light); transform: translateY(-2px); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--white);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  padding: 16px 32px;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+/* HERO RIGHT — VISUAL */
+.hero-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent-card {
+  background: var(--surface);
+  border: 1px solid var(--gold-border);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  transition: all 0.4s;
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--gold);
+}
+
+.agent-card:hover {
+  border-color: rgba(200,169,110,0.4);
+  transform: translateX(4px);
+}
+
+.agent-icon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--gold-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.agent-info { flex: 1; }
+
+.agent-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.agent-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+.agent-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-status::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.agent-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gold);
+}
+
+/* CAO CARD */
+.cao-card {
+  background: var(--gold);
+  padding: 24px;
+  margin-top: 4px;
+}
+
+.cao-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: rgba(0,0,0,0.5);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.cao-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: var(--black);
+  margin-bottom: 6px;
+}
+
+.cao-desc {
+  font-size: 12px;
+  color: rgba(0,0,0,0.6);
+  line-height: 1.5;
+}
+
+.cao-price {
+  margin-top: 12px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: var(--black);
+}
+
+.cao-price span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(0,0,0,0.5);
+}
+
+/* ── TICKER ── */
+.ticker {
+  background: var(--surface);
+  border-top: 1px solid var(--gold-border);
+  border-bottom: 1px solid var(--gold-border);
+  padding: 12px 0;
+  overflow: hidden;
+}
+
+.ticker-track {
+  display: flex;
+  animation: tick 25s linear infinite;
+  white-space: nowrap;
+}
+
+.ticker-item {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ticker-item b { color: var(--gold); }
+
+.ticker-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+
+@keyframes tick {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* ── SECTION BASE ── */
+section { padding: 120px 48px; position: relative; }
+
+.s-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--gold);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.s-tag::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--gold);
+}
+
+/* ── DUAL SECTION ── */
+.dual {
+  background: var(--surface);
+  border-top: 1px solid var(--gold-border);
+}
+
+.dual-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+
+.dual-side {
+  padding: 80px 60px;
+  position: relative;
+}
+
+.dual-side:first-child {
+  border-right: 1px solid var(--gold-border);
+}
+
+.dual-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 100px;
+  line-height: 1;
+  color: rgba(200,169,110,0.08);
+  position: absolute;
+  top: 40px;
+  right: 40px;
+}
+
+.dual-h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 4vw, 54px);
+  letter-spacing: 1px;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.dual-h2 em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  color: var(--gold);
+}
+
+.dual-text {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-dim);
+  margin-bottom: 32px;
+}
+
+.dual-price {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px;
+  color: var(--gold);
+  letter-spacing: 2px;
+}
+
+.dual-price span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.feature-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.feature-list li {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 1px;
+}
+
+.feature-list li::before {
+  content: '→';
+  color: var(--gold);
+}
+
+/* ── STATS ── */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--gold-border);
+  border-bottom: 1px solid var(--gold-border);
+}
+
+.stat-block {
+  padding: 48px 40px;
+  border-right: 1px solid var(--gold-border);
+  text-align: center;
+}
+
+.stat-block:last-child { border-right: none; }
+
+.stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 56px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+/* ── CAO SECTION ── */
+.cao-section {
+  background: var(--gold);
+  padding: 100px 48px;
+}
+
+.cao-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.cao-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: rgba(0,0,0,0.4);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cao-tag::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: rgba(0,0,0,0.3);
+}
+
+.cao-h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(48px, 6vw, 80px);
+  line-height: 0.92;
+  color: var(--black);
+  letter-spacing: 2px;
+}
+
+.cao-h2 em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+}
+
+.cao-body {
+  font-size: 16px;
+  line-height: 1.65;
+  color: rgba(0,0,0,0.6);
+  margin-top: 24px;
+}
+
+.cao-features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cao-feat {
+  background: rgba(0,0,0,0.06);
+  padding: 20px 24px;
+  border-left: 2px solid rgba(0,0,0,0.2);
+}
+
+.cao-feat-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--black);
+  margin-bottom: 4px;
+}
+
+.cao-feat-desc {
+  font-size: 13px;
+  color: rgba(0,0,0,0.5);
+  line-height: 1.5;
+}
+
+.cao-range {
+  margin-top: 24px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: var(--black);
+}
+
+/* ── MARKETS ── */
+.markets { background: var(--black); }
+
+.markets-inner { max-width: 1200px; margin: 0 auto; }
+
+.markets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin-top: 60px;
+  background: var(--gold-border);
+}
+
+.market-card {
+  background: var(--black);
+  padding: 40px 32px;
+  transition: background 0.3s;
+}
+
+.market-card:hover { background: var(--surface); }
+
+.market-flag { font-size: 28px; margin-bottom: 16px; }
+.market-name { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; margin-bottom: 8px; }
+.market-desc { font-size: 14px; color: var(--text-dim); line-height: 1.6; }
+
+.market-tag {
+  display: inline-block;
+  margin-top: 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #22c55e;
+  background: rgba(34,197,94,0.08);
+  padding: 4px 10px;
+  text-transform: uppercase;
+}
+
+/* ── CTA ── */
+.cta {
+  background: var(--black);
+  text-align: center;
+  padding: 160px 48px;
+  border-top: 1px solid var(--gold-border);
+}
+
+.cta-h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(56px, 8vw, 96px);
+  line-height: 0.92;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+}
+
+.cta-h2 em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  color: var(--gold);
+}
+
+.cta-sub {
+  font-size: 17px;
+  color: var(--text-dim);
+  margin-bottom: 48px;
+}
+
+.cta-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── FOOTER ── */
+footer {
+  padding: 40px 48px;
+  border-top: 1px solid var(--gold-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 6px;
+  color: var(--gold);
+}
+
+.footer-copy {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+}
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  nav { padding: 16px 20px; }
+  .nav-center { display: none; }
+  .hero { grid-template-columns: 1fr; padding: 100px 20px 60px; gap: 40px; }
+  section { padding: 80px 20px; }
+  .dual-inner { grid-template-columns: 1fr; }
+  .dual-side:first-child { border-right: none; border-bottom: 1px solid var(--gold-border); }
+  .dual-side { padding: 48px 24px; }
+  .stats-bar { grid-template-columns: 1fr 1fr; }
+  .stat-block:nth-child(2) { border-right: none; }
+  .cao-inner { grid-template-columns: 1fr; gap: 40px; }
+  .markets-grid { grid-template-columns: 1fr; }
+  .cta-actions { flex-direction: column; align-items: center; }
+  footer { flex-direction: column; gap: 12px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">VELA</div>
+  <div class="nav-center">
+    <a href="#agents">Agents</a>
+    <a href="#cao">CAO Service</a>
+    <a href="#markets">Markets</a>
+  </div>
+  <button class="nav-cta" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Deploy Now</button>
+  <button class="nav-mobile-menu" onclick="toggleMobileNav()" aria-label="Menu">☰</button>
+</nav>
+
+<!-- MOBILE NAV DROPDOWN -->
+<div id="mobile-nav" style="display:none;position:fixed;top:65px;left:0;right:0;z-index:99;background:rgba(8,8,6,0.97);border-bottom:1px solid rgba(200,169,110,0.2);padding:20px 24px;display:none;flex-direction:column;gap:16px;">
+  <a href="#agents" onclick="closeMobileNav()" style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#6b6459;text-decoration:none;">Agents</a>
+  <a href="#cao" onclick="closeMobileNav()" style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#6b6459;text-decoration:none;">CAO Service</a>
+  <a href="#markets" onclick="closeMobileNav()" style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#6b6459;text-decoration:none;">Markets</a>
+  <a href="#contact" onclick="closeMobileNav()" style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#c8a96e;text-decoration:none;">Deploy Now →</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid-lines"></div>
+
+  <div class="hero-left">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-line"></div>
+      <div class="hero-eyebrow-text">AI Workforce · 2026</div>
+    </div>
+    <h1 class="hero-h1">
+      YOUR BUSINESS.<br>
+      <span class="hero-h1-italic">Run by AI.</span>
+      SCALED BY YOU.
+    </h1>
+    <p class="hero-sub">Deploy AI employees that handle support, sales, and operations 24/7 — or hire a Chief Agent Officer to build and manage your entire AI workforce. Live in 48 hours.</p>
+    <div class="hero-actions">
+      <a href="#agents" class="btn-gold">Deploy an Agent — $500/mo</a>
+      <a href="#cao" class="btn-outline">Hire a CAO →</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="agent-card">
+      <div class="agent-icon">💬</div>
+      <div class="agent-info">
+        <div class="agent-label">VELA Support</div>
+        <div class="agent-title">24/7 Customer Service Agent</div>
+        <div class="agent-status">Online — Responding in 8 seconds</div>
+      </div>
+      <div class="agent-price">$500/mo</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">📈</div>
+      <div class="agent-info">
+        <div class="agent-label">VELA Sales</div>
+        <div class="agent-title">Outbound + Follow-Up Agent</div>
+        <div class="agent-status">Active — 3 leads followed up today</div>
+      </div>
+      <div class="agent-price">$1,000/mo</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">⚙️</div>
+      <div class="agent-info">
+        <div class="agent-label">VELA Ops</div>
+        <div class="agent-title">Internal Operations Agent</div>
+        <div class="agent-status">Active — 12 tasks completed</div>
+      </div>
+      <div class="agent-price">$1,500/mo</div>
+    </div>
+    <div class="cao-card">
+      <div class="cao-label">Premium Service</div>
+      <div class="cao-title">CHIEF AGENT OFFICER</div>
+      <div class="cao-desc">We build, deploy, and manage your entire AI workforce. You get a dedicated CAO who runs it all.</div>
+      <div class="cao-price">$5,000 <span>/ month starting</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span class="ticker-item"><b>VELA Support</b> <div class="ticker-dot"></div> 24/7 Customer Service</span>
+    <span class="ticker-item"><b>VELA Sales</b> <div class="ticker-dot"></div> Automated Outreach</span>
+    <span class="ticker-item"><b>VELA Ops</b> <div class="ticker-dot"></div> Internal Automation</span>
+    <span class="ticker-item"><b>CAO Service</b> <div class="ticker-dot"></div> Full AI Workforce Management</span>
+    <span class="ticker-item"><b>Live in 48 Hours</b> <div class="ticker-dot"></div> No Long Contract</span>
+    <span class="ticker-item"><b>$1,400 Margin</b> <div class="ticker-dot"></div> Per Client</span>
+    <span class="ticker-item"><b>VELA Support</b> <div class="ticker-dot"></div> 24/7 Customer Service</span>
+    <span class="ticker-item"><b>VELA Sales</b> <div class="ticker-dot"></div> Automated Outreach</span>
+    <span class="ticker-item"><b>VELA Ops</b> <div class="ticker-dot"></div> Internal Automation</span>
+    <span class="ticker-item"><b>CAO Service</b> <div class="ticker-dot"></div> Full AI Workforce Management</span>
+    <span class="ticker-item"><b>Live in 48 Hours</b> <div class="ticker-dot"></div> No Long Contract</span>
+    <span class="ticker-item"><b>$1,400 Margin</b> <div class="ticker-dot"></div> Per Client</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-block">
+    <div class="stat-num">48H</div>
+    <div class="stat-label">Time to Deploy</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-num">24/7</div>
+    <div class="stat-label">Always Working</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-num">10×</div>
+    <div class="stat-label">Cheaper Than Hiring</div>
+  </div>
+  <div class="stat-block">
+    <div class="stat-num">$0</div>
+    <div class="stat-label">Recruitment Cost</div>
+  </div>
+</div>
+
+<!-- DUAL — TWO AUDIENCES -->
+<section class="dual" id="agents">
+  <div class="dual-inner">
+    <!-- SMB Side -->
+    <div class="dual-side">
+      <div class="dual-num">01</div>
+      <div class="s-tag">For Business Owners</div>
+      <h2 class="dual-h2">Get an AI<br><em>Employee</em><br>Today.</h2>
+      <p class="dual-text">Stop paying $3,000/month for a support rep. Deploy a VELA agent trained on your business in 48 hours. Handles WhatsApp, email, and live chat while you sleep.</p>
+      <ul class="feature-list">
+        <li>Trained on your products and policies</li>
+        <li>Responds in under 10 seconds</li>
+        <li>Works WhatsApp, email, live chat</li>
+        <li>Escalates complex issues to you</li>
+        <li>No long-term contract required</li>
+      </ul>
+      <div class="dual-price">$500 <span>/ month</span></div>
+      <br><br>
+      <a href="#contact" class="btn-gold">Deploy Your Agent</a>
+    </div>
+    <!-- CAO Side -->
+    <div class="dual-side">
+      <div class="dual-num">02</div>
+      <div class="s-tag">For Growing Companies</div>
+      <h2 class="dual-h2">Hire a Chief<br><em>Agent</em><br>Officer.</h2>
+      <p class="dual-text">Your company needs more than one agent — it needs someone to build, deploy, and manage your entire AI workforce. That's what a CAO does. Harvard says it's the most critical role of 2026.</p>
+      <ul class="feature-list">
+        <li>Full AI workforce strategy and deployment</li>
+        <li>Agents across support, sales, ops, HR</li>
+        <li>Monthly performance reporting</li>
+        <li>Continuous optimization and scaling</li>
+        <li>Dedicated CAO available to your team</li>
+      </ul>
+      <div class="dual-price">$5,000+ <span>/ month</span></div>
+      <br><br>
+      <a href="#contact" class="btn-gold">Book a CAO Call</a>
+    </div>
+  </div>
+</section>
+
+<!-- CAO SECTION -->
+<section class="cao-section" id="cao">
+  <div class="cao-inner">
+    <div>
+      <div class="cao-tag">The New Executive Role</div>
+      <h2 class="cao-h2">THE<br>CHIEF<br><em>AGENT</em><br>OFFICER.</h2>
+      <p class="cao-body">Harvard Business Review called it the most in-demand role of 2026. Only 45 people in the entire United States have the title. VELA gives you access to one — without the $300K salary.</p>
+      <div class="cao-range">$5,000 — $20,000 / month</div>
+      <br>
+      <a href="#contact" class="btn-outline" style="border-color:rgba(0,0,0,0.3);color:#000;margin-top:16px;display:inline-block">Start Conversation →</a>
+    </div>
+    <div class="cao-features">
+      <div class="cao-feat">
+        <div class="cao-feat-title">Build Your AI Workforce</div>
+        <div class="cao-feat-desc">We design, deploy, and configure every AI agent your business needs across every department.</div>
+      </div>
+      <div class="cao-feat">
+        <div class="cao-feat-title">Manage Performance</div>
+        <div class="cao-feat-desc">Monthly reporting on every agent — response rates, satisfaction scores, cost savings, revenue impact.</div>
+      </div>
+      <div class="cao-feat">
+        <div class="cao-feat-title">Scale Continuously</div>
+        <div class="cao-feat-desc">As your business grows, your AI workforce grows with it. New agents deployed in 48 hours.</div>
+      </div>
+      <div class="cao-feat">
+        <div class="cao-feat-title">Strategic AI Roadmap</div>
+        <div class="cao-feat-desc">Quarterly strategy sessions to identify where AI can unlock the next level of efficiency and revenue.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARKETS -->
+<section class="markets" id="markets">
+  <div class="markets-inner">
+    <div class="s-tag">Where We Operate</div>
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,5vw,64px);letter-spacing:2px;line-height:1;">ZERO COMPETITION.<br>MASSIVE DEMAND.</h2>
+    <div class="markets-grid">
+      <div class="market-card">
+        <div class="market-flag">🌍</div>
+        <div class="market-name">Africa</div>
+        <div class="market-desc">High WhatsApp penetration, fast-growing SMB market, near-zero AI agent competition at enterprise quality.</div>
+        <div class="market-tag">First Mover Advantage</div>
+      </div>
+      <div class="market-card">
+        <div class="market-flag">🌏</div>
+        <div class="market-name">Southeast Asia</div>
+        <div class="market-desc">E-commerce explosion, logistics boom, millions of businesses that need AI workers but can't find them.</div>
+        <div class="market-tag">Fastest Growing</div>
+      </div>
+      <div class="market-card">
+        <div class="market-flag">🌎</div>
+        <div class="market-name">Latin America</div>
+        <div class="market-desc">Digital transformation at scale. Real estate, clinics, retail — all desperate for affordable AI solutions.</div>
+        <div class="market-tag">High Demand</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="contact">
+  <h2 class="cta-h2">YOUR AI<br>WORKFORCE<br><em>STARTS TODAY.</em></h2>
+  <p class="cta-sub">First agent live in 48 hours. No long-term contract. Cancel anytime.</p>
+  <div class="cta-actions">
+    <div id="cta-form" style="display:flex;gap:0;max-width:480px;width:100%;flex-wrap:wrap;">
+      <input type="email" id="cta-email" placeholder="your@email.com"
+        style="flex:1;min-width:200px;background:#0f0e0c;border:1px solid rgba(200,169,110,0.3);padding:16px 20px;font-family:'DM Mono',monospace;font-size:13px;color:#f0ede6;outline:none;">
+      <button class="btn-gold" onclick="submitCTA()" style="white-space:nowrap;border:none;min-width:160px;">Get Started →</button>
+    </div>
+    <a href="mailto:velaoutreach@gmail.com" class="btn-outline">Book a CAO Call</a>
+  </div>
+  <div id="cta-confirm" style="display:none !important;font-family:'DM Mono',monospace;font-size:13px;letter-spacing:2px;color:#c8a96e;margin-top:20px;" class="cta-hidden">✦ We'll be in touch within 24 hours.</div>
+  <p style="margin-top:16px;font-family:'DM Mono',monospace;font-size:10px;color:#6b6459;letter-spacing:1px;">Or email directly: velaoutreach@gmail.com</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">VELA</div>
+  <div class="footer-copy">© 2026 VELA · AI Employees as a Service · velaoutreach@gmail.com</div>
+</footer>
+
+<script>
+  // ── SCROLL REVEAL — mobile safe ──
+  const isMobile = window.innerWidth <= 768;
+
+  const reveals = document.querySelectorAll('.agent-card, .cao-card, .stat-block, .dual-side, .cao-feat, .market-card, .s-tag, .dual-h2, .dual-text, .feature-list, .dual-price, .cao-h2, .cao-body, .cao-range, .cta-h2, .cta-sub');
+
+  if (isMobile) {
+    // On mobile — show everything immediately, no animation
+    reveals.forEach(r => { r.style.opacity = '1'; r.style.transform = 'none'; });
+  } else {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          e.target.style.transition = `opacity 0.7s ease ${i * 0.06}s, transform 0.7s ease ${i * 0.06}s`;
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'translateY(0)';
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(r => {
+      r.style.opacity = '0';
+      r.style.transform = 'translateY(28px)';
+      obs.observe(r);
+    });
+  }
+
+  // ── HERO ANIMATE — mobile safe ──
+  const heroEls = document.querySelectorAll('.hero-eyebrow, .hero-h1, .hero-sub, .hero-actions');
+  if (isMobile) {
+    heroEls.forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; });
+  } else {
+    heroEls.forEach((el, i) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(24px)';
+      el.style.transition = `opacity 0.8s ease ${0.2 + i * 0.15}s, transform 0.8s ease ${0.2 + i * 0.15}s`;
+      setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 100);
+    });
+  }
+
+  // ── MOBILE NAV ──
+  function toggleMobileNav() {
+    const nav = document.getElementById('mobile-nav');
+    nav.style.display = nav.style.display === 'flex' ? 'none' : 'flex';
+  }
+  function closeMobileNav() {
+    document.getElementById('mobile-nav').style.display = 'none';
+  }
+
+  // ── CTA EMAIL CAPTURE ──
+  function submitCTA() {
+    const emailInput = document.getElementById('cta-email');
+    const email = emailInput.value.trim();
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      emailInput.style.border = '1px solid #ef4444';
+      emailInput.focus();
+      return;
+    }
+    emailInput.style.border = '1px solid rgba(200,169,110,0.3)';
+    // Save to Vela dashboard leads
+    fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'waitlist',
+        email,
+        source: 'landing-cta',
+        date: new Date().toISOString(),
+        status: 'new'
+      })
+    }).catch(() => {});
+    document.getElementById('cta-form').style.display = 'none';
+    confirm.style.cssText = 'display:block;font-family:"DM Mono",monospace;font-size:13px;letter-spacing:2px;color:#c8a96e;margin-top:20px;';
+    confirm.textContent = '✦ Received. We\'ll be in touch within 30 minutes.';
+  }
+
+  // Allow enter key on email input
+  document.getElementById('cta-email').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') submitCTA();
+  });
+</script>
+</body>
+</html>

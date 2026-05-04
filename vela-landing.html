@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vela — AI Agents for Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --black: #080808;
+    --void: #0c0c0c;
+    --surface: #111111;
+    --border: rgba(255,255,255,0.07);
+    --border-lit: rgba(255,255,255,0.15);
+    --gold: #c9a84c;
+    --gold-dim: rgba(201,168,76,0.15);
+    --gold-glow: rgba(201,168,76,0.4);
+    --white: #f0ede8;
+    --muted: rgba(240,237,232,0.4);
+    --dim: rgba(240,237,232,0.15);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    cursor: none;
+    overflow-x: hidden;
+  }
+
+  /* CURSOR */
+  #cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s, opacity 0.2s;
+    transform: translate(-50%, -50%);
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 32px; height: 32px;
+    border: 1px solid rgba(201,168,76,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease, width 0.2s, height 0.2s, opacity 0.2s;
+  }
+  body:hover #cursor { opacity: 1; }
+
+  /* GRID BG */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .grid-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 70%);
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    background: rgba(8,8,8,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 6px;
+    color: var(--white);
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    padding: 10px 24px;
+    cursor: none;
+    font-weight: 500;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .nav-cta:hover { background: #e0ba5a; transform: translateY(-1px); }
+
+  /* SECTIONS */
+  section { position: relative; z-index: 1; }
+
+  /* HERO */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 48px 80px;
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(80px, 14vw, 180px);
+    line-height: 0.9;
+    letter-spacing: 8px;
+    margin-bottom: 12px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+  }
+
+  /* GLITCH */
+  .glitch {
+    position: relative;
+    display: inline-block;
+  }
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: inherit;
+    letter-spacing: inherit;
+  }
+  .glitch::before {
+    color: var(--gold);
+    animation: glitch1 4s infinite;
+    clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+  }
+  .glitch::after {
+    color: #4af;
+    animation: glitch2 4s infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+  }
+  @keyframes glitch1 {
+    0%, 90%, 100% { transform: none; opacity: 0; }
+    92% { transform: translate(-3px, 1px); opacity: 0.8; }
+    94% { transform: translate(3px, -1px); opacity: 0.8; }
+    96% { transform: none; opacity: 0; }
+  }
+  @keyframes glitch2 {
+    0%, 88%, 100% { transform: none; opacity: 0; }
+    90% { transform: translate(3px, 2px); opacity: 0.6; }
+    92% { transform: translate(-2px, -1px); opacity: 0.6; }
+    94% { transform: none; opacity: 0; }
+  }
+
+  .hero-sub {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(24px, 4vw, 52px);
+    letter-spacing: 6px;
+    color: var(--gold);
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+  }
+
+  .hero-desc {
+    max-width: 540px;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--muted);
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    opacity: 0;
+    animation: fadeUp 0.8s 1s forwards;
+  }
+
+  .btn-primary {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    padding: 16px 40px;
+    cursor: none;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { background: #e0ba5a; transform: translateY(-2px); }
+
+  .btn-ghost {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--white);
+    border: 1px solid var(--border-lit);
+    padding: 16px 40px;
+    cursor: none;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* STATS BAR */
+  #stats {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0;
+  }
+  .stats-inner {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .stat-item {
+    padding: 36px 40px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* AGENTS */
+  #agents {
+    padding: 120px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 6vw, 72px);
+    letter-spacing: 4px;
+    line-height: 0.95;
+    margin-bottom: 60px;
+  }
+
+  .agent-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+
+  .agent-tab {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 14px 32px;
+    cursor: none;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+  }
+  .agent-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+  .agent-tab:hover:not(.active) { color: var(--white); }
+
+  .agent-panel { display: none; }
+  .agent-panel.active {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: start;
+  }
+
+  .agent-info h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+  }
+  .agent-info p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .agent-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .agent-features li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .agent-features li::before {
+    content: '';
+    width: 20px; height: 1px;
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .agent-visual {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px;
+    position: relative;
+  }
+  .agent-visual::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+
+  .mock-chat { display: flex; flex-direction: column; gap: 12px; }
+  .mock-msg {
+    padding: 12px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 80%;
+  }
+  .mock-msg.user {
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.2);
+    align-self: flex-end;
+    color: var(--white);
+  }
+  .mock-msg.agent {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    align-self: flex-start;
+    color: var(--muted);
+  }
+  .mock-msg.agent strong { color: var(--gold); }
+
+  /* HOW IT WORKS */
+  #how {
+    padding: 120px 48px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .how-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 60px;
+  }
+  .step {
+    padding: 40px 32px;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .step:last-child { border-right: none; }
+  .step-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    color: var(--dim);
+    line-height: 1;
+    margin-bottom: 20px;
+  }
+  .step-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+  .step-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  /* PRICING */
+  #pricing {
+    padding: 120px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 60px;
+  }
+  .price-card {
+    background: var(--void);
+    padding: 40px 36px;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .price-card:hover { background: var(--surface); }
+  .price-card.featured {
+    background: var(--surface);
+  }
+  .price-card.featured::before {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: var(--gold);
+    color: var(--black);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 6px;
+    text-align: center;
+  }
+  .price-tier {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 24px;
+    margin-top: 8px;
+  }
+  .price-card.featured .price-tier { margin-top: 28px; }
+  .price-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    letter-spacing: 2px;
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+  .price-period {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  .price-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+  .price-features li {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .price-features li::before {
+    content: '—';
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .price-btn {
+    width: 100%;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 14px;
+    cursor: none;
+    border: 1px solid var(--border-lit);
+    background: transparent;
+    color: var(--white);
+    transition: all 0.2s;
+  }
+  .price-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .price-card.featured .price-btn {
+    background: var(--gold);
+    color: var(--black);
+    border-color: var(--gold);
+    font-weight: 500;
+  }
+  .price-card.featured .price-btn:hover { background: #e0ba5a; }
+
+  /* WAITLIST */
+  #waitlist {
+    padding: 120px 48px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .waitlist-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .waitlist-inner .section-title { margin-bottom: 16px; }
+  .waitlist-inner p {
+    font-size: 16px;
+    color: var(--muted);
+    margin-bottom: 48px;
+    line-height: 1.7;
+  }
+
+  .waitlist-form {
+    display: flex;
+    gap: 0;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .waitlist-form input {
+    flex: 1;
+    background: var(--void);
+    border: 1px solid var(--border-lit);
+    border-right: none;
+    padding: 16px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .waitlist-form input::placeholder { color: var(--dim); }
+  .waitlist-form input:focus { border-color: var(--gold); }
+  .waitlist-form button {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    padding: 16px 28px;
+    cursor: none;
+    font-weight: 500;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .waitlist-form button:hover { background: #e0ba5a; }
+
+  .waitlist-confirm {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    border: 1px solid rgba(201,168,76,0.3);
+    background: var(--gold-dim);
+  }
+  .waitlist-confirm.show { display: flex; }
+  .waitlist-confirm span {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--gold);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 5px;
+    color: var(--muted);
+  }
+  .footer-logo span { color: var(--gold); }
+  .footer-copy {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+  }
+
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ======= MOBILE ======= */
+  @media (max-width: 768px) {
+    /* Kill custom cursor on touch */
+    body { cursor: auto; }
+    #cursor, #cursor-ring { display: none !important; }
+
+    /* NAV */
+    nav { padding: 14px 20px; }
+    nav .nav-links { display: none !important; }
+
+    /* HERO — remove min-height entirely, use padding to sit content
+       right below the nav (~60px tall on mobile) */
+    #hero {
+      min-height: unset;
+      height: auto;
+      padding: 100px 24px 64px;
+      justify-content: flex-start;
+    }
+    .hero-eyebrow { font-size: 9px; letter-spacing: 3px; margin-bottom: 16px; }
+    .hero-title { font-size: clamp(64px, 20vw, 110px); letter-spacing: 4px; }
+    .hero-sub { font-size: clamp(16px, 5.5vw, 26px); letter-spacing: 3px; margin-bottom: 16px; }
+    .hero-desc { font-size: 14px; margin-bottom: 32px; max-width: 100%; }
+    .hero-actions { flex-direction: column; width: 100%; max-width: 100%; gap: 12px; }
+    .btn-primary, .btn-ghost { width: 100%; text-align: center; padding: 15px 24px; }
+
+    /* STATS — keep 3-col, just tighten it */
+    .stats-inner { grid-template-columns: repeat(3, 1fr); }
+    .stat-item { padding: 20px 10px; }
+    .stat-num { font-size: 28px; }
+    .stat-label { font-size: 8px; letter-spacing: 1px; }
+
+    /* Kill reveal animations on mobile — just show everything */
+    .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+
+    /* AGENTS */
+    #agents { padding: 0 20px; }
+    #agents .agents-inner { padding: 48px 0 40px !important; }
+    .section-title { font-size: clamp(30px, 9vw, 48px); margin-bottom: 32px; }
+    .agent-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding-bottom: 1px; }
+    .agent-tab { padding: 11px 16px; font-size: 9px; white-space: nowrap; }
+    .agent-panel.active { grid-template-columns: 1fr; gap: 24px; }
+    .agent-visual { padding: 20px; }
+    .mock-msg { font-size: 11px; }
+
+    /* HOW IT WORKS */
+    #how { padding: 72px 20px; }
+    .how-inner { max-width: 100%; }
+    .steps-grid { grid-template-columns: 1fr 1fr; gap: 0; }
+    .step { border-right: none; border-bottom: 1px solid var(--border); padding: 24px 16px; }
+    .step:nth-child(odd) { border-right: 1px solid var(--border); }
+    .step:nth-last-child(-n+2) { border-bottom: none; }
+    .step-num { font-size: 48px; }
+    .step-desc { font-size: 13px; }
+
+    /* PRICING */
+    #pricing { padding: 72px 20px; max-width: 100%; }
+    .pricing-grid { grid-template-columns: 1fr; background: none; border: none; gap: 12px; }
+    .price-card { border: 1px solid var(--border); padding: 28px 22px; }
+    .price-card.featured { border-color: rgba(201,168,76,0.4); }
+
+    /* WAITLIST */
+    #waitlist { padding: 72px 20px; }
+    .waitlist-inner p { margin-bottom: 32px; }
+    .waitlist-form { flex-direction: column; max-width: 100%; }
+    .waitlist-form input { border-right: 1px solid var(--border-lit); border-bottom: none; }
+    .waitlist-form button { width: 100%; padding: 16px; }
+
+    /* FOOTER */
+    footer { flex-direction: column; gap: 10px; padding: 24px 20px; text-align: center; }
+  }
+
+  @media (max-width: 480px) {
+    .steps-grid { grid-template-columns: 1fr; }
+    .step { border-right: none !important; border-bottom: 1px solid var(--border) !important; }
+    .step:last-child { border-bottom: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<nav>
+  <div class="nav-logo">VE<span>L</span>A</div>
+  <ul class="nav-links">
+    <li><a href="#agents">Agents</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="/demo" style="color:var(--gold);">Live Demo</a></li>
+  </ul>
+  <button class="nav-cta" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Get Access</button>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-eyebrow">Intelligent Automation Infrastructure</div>
+  <h1 class="hero-title">
+    <span class="glitch" data-text="VELA">VELA</span>
+  </h1>
+  <div class="hero-sub">Deploy. Automate. Scale.</div>
+  <p class="hero-desc">Enterprise-grade AI agents that handle support, sales, and operations — live in 48 hours. Built for agencies that want recurring revenue without recurring headaches.</p>
+  <div class="hero-actions">
+    <button class="btn-primary" onclick="document.getElementById('waitlist').scrollIntoView({behavior:'smooth'})">Join the Waitlist</button>
+    <button class="btn-ghost" onclick="document.getElementById('agents').scrollIntoView({behavior:'smooth'})">See the Agents</button>
+  </div>
+</section>
+
+<!-- STATS -->
+<section id="stats">
+  <div class="stats-inner">
+    <div class="stat-item reveal">
+      <div class="stat-num">$1,400</div>
+      <div class="stat-label">Average Monthly Margin Per Client</div>
+    </div>
+    <div class="stat-item reveal">
+      <div class="stat-num">70</div>
+      <div class="stat-label">Clients to $1M ARR</div>
+    </div>
+    <div class="stat-item reveal">
+      <div class="stat-num">2HR</div>
+      <div class="stat-label">Average Onboarding Time</div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENTS -->
+<section id="agents">
+  <div class="agents-inner" style="max-width:1100px;margin:0 auto;padding:120px 0;">
+    <div class="section-label reveal">The Suite</div>
+    <h2 class="section-title reveal">Three Agents.<br>One Platform.</h2>
+
+    <div class="agent-tabs reveal">
+      <button class="agent-tab active" onclick="showAgent('support',this)">Support Agent</button>
+      <button class="agent-tab" onclick="showAgent('sales',this)">Sales Agent</button>
+      <button class="agent-tab" onclick="showAgent('ops',this)">Ops Agent</button>
+    </div>
+
+    <!-- Support -->
+    <div class="agent-panel active" id="panel-support">
+      <div class="agent-info">
+        <h3>Support Agent</h3>
+        <p>24/7 AI-powered customer support trained on your client's business. Handles inquiries, escalations, and FAQs with human-level precision.</p>
+        <ul class="agent-features">
+          <li>Trains on custom business FAQs and tone</li>
+          <li>Handles 90%+ of inbound tickets without escalation</li>
+          <li>Multi-channel: web, email, SMS</li>
+          <li>Live handoff to human agents</li>
+          <li>Weekly performance reports</li>
+        </ul>
+      </div>
+      <div class="agent-visual">
+        <div class="mock-chat">
+          <div class="mock-msg user">Hi, I need help tracking my order #4821</div>
+          <div class="mock-msg agent"><strong>VELA Support</strong><br>Order #4821 is currently in transit and estimated to arrive Thursday. Would you like me to send tracking updates to your email?</div>
+          <div class="mock-msg user">Yes please</div>
+          <div class="mock-msg agent"><strong>VELA Support</strong><br>Done. You'll receive updates at the email on file. Anything else I can help with?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sales -->
+    <div class="agent-panel" id="panel-sales">
+      <div class="agent-info">
+        <h3>Sales Agent</h3>
+        <p>Automated outreach, lead scoring, and follow-up sequences. Finds, qualifies, and warms prospects while your client focuses on closing.</p>
+        <ul class="agent-features">
+          <li>AI-generated personalised cold emails</li>
+          <li>4-step outreach sequences with smart timing</li>
+          <li>Lead scoring and pipeline management</li>
+          <li>CRM sync and meeting booking</li>
+          <li>Reply analysis and follow-up triggers</li>
+        </ul>
+      </div>
+      <div class="agent-visual">
+        <div class="mock-chat">
+          <div class="mock-msg agent"><strong>VELA Sales</strong><br>New lead identified: Sarah Chen, VP Operations at Meridian Logistics. Score: 87/100. Recommend immediate outreach.</div>
+          <div class="mock-msg user">Generate email — pain point angle</div>
+          <div class="mock-msg agent"><strong>VELA Sales</strong><br>Draft ready. Subject: "Cutting ops overhead at Meridian." Opening hooks on their recent expansion announcement. Sending?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ops -->
+    <div class="agent-panel" id="panel-ops">
+      <div class="agent-info">
+        <h3>Ops Agent</h3>
+        <p>Automates internal workflows, reporting, scheduling, and data management. The silent operator that keeps everything running.</p>
+        <ul class="agent-features">
+          <li>Automated reporting and digest generation</li>
+          <li>Task routing and assignment logic</li>
+          <li>Calendar and scheduling management</li>
+          <li>Document generation and filing</li>
+          <li>Integrates with 50+ business tools</li>
+        </ul>
+      </div>
+      <div class="agent-visual">
+        <div class="mock-chat">
+          <div class="mock-msg agent"><strong>VELA Ops</strong><br>Weekly digest ready. Revenue up 12%, 4 tickets unresolved over 48hrs, 2 meetings need rescheduling. Routing now.</div>
+          <div class="mock-msg user">Send digest and reschedule meetings</div>
+          <div class="mock-msg agent"><strong>VELA Ops</strong><br>Digest sent to 6 stakeholders. Meetings rescheduled for Thursday AM. All conflicts resolved.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="how-inner">
+    <div class="section-label reveal">Process</div>
+    <h2 class="section-title reveal">Live in 48 Hours.</h2>
+    <div class="steps-grid">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div class="step-title">Onboard</div>
+        <p class="step-desc">Client fills a 10-minute intake form. Business info, FAQs, tone preferences, integrations.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <div class="step-title">Configure</div>
+        <p class="step-desc">VELA trains the agent on the client's data. You review and approve the config from your dashboard.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <div class="step-title">Deploy</div>
+        <p class="step-desc">One-click deployment. Embed code or API key delivered to the client. Agent goes live instantly.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">04</div>
+        <div class="step-title">Scale</div>
+        <p class="step-desc">Monitor performance, tune responses, add agents. Each client runs autonomously — you collect margin.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-label reveal">Pricing</div>
+  <h2 class="section-title reveal">Straightforward.<br>No Surprises.</h2>
+  <div class="pricing-grid reveal">
+    <div class="price-card">
+      <div class="price-tier">Starter</div>
+      <div class="price-amount">$499</div>
+      <div class="price-period">/ month per client</div>
+      <ul class="price-features">
+        <li>1 VELA Agent (Support)</li>
+        <li>Up to 2,000 conversations/month</li>
+        <li>Standard response time</li>
+        <li>Weekly reports</li>
+        <li>Email support</li>
+      </ul>
+      <button class="price-btn">Get Started</button>
+    </div>
+    <div class="price-card featured">
+      <div class="price-tier">Growth</div>
+      <div class="price-amount">$999</div>
+      <div class="price-period">/ month per client</div>
+      <ul class="price-features">
+        <li>2 VELA Agents (Support + Sales)</li>
+        <li>Up to 10,000 conversations/month</li>
+        <li>Priority response time</li>
+        <li>Daily reports + analytics</li>
+        <li>CRM and calendar integrations</li>
+        <li>Dedicated onboarding</li>
+      </ul>
+      <button class="price-btn">Get Started</button>
+    </div>
+    <div class="price-card">
+      <div class="price-tier">Enterprise</div>
+      <div class="price-amount">Custom</div>
+      <div class="price-period">/ tailored to volume</div>
+      <ul class="price-features">
+        <li>All 3 VELA Agents</li>
+        <li>Unlimited conversations</li>
+        <li>Custom AI training</li>
+        <li>White-label option</li>
+        <li>SLA guarantee</li>
+        <li>Dedicated account manager</li>
+      </ul>
+      <button class="price-btn">Contact Us</button>
+    </div>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section id="waitlist">
+  <div class="waitlist-inner">
+    <div class="section-label reveal">Early Access</div>
+    <h2 class="section-title reveal">First 20 Operators<br>Get Priority Onboarding.</h2>
+    <p class="reveal">Lock in founding rates and get your first client live before the public launch. No credit card required.</p>
+
+    <div class="waitlist-form reveal" id="wf">
+      <input type="email" id="wl-email" placeholder="your@email.com">
+      <button onclick="submitWaitlist()">Reserve Spot</button>
+    </div>
+    <div class="waitlist-confirm" id="wl-confirm">
+      <span>✦ You're on the list. We'll be in touch.</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">VE<span>L</span>A</div>
+  <div class="footer-copy">© 2025 VELA · AI Agents for Business</div>
+</footer>
+
+<script>
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+  function animRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) *.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animRing);
+  }
+  animRing();
+
+  document.querySelectorAll('button, a, input').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.transform = 'translate(-50%,-50%) scale(2)';
+      ring.style.width = '48px'; ring.style.height = '48px';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+      ring.style.width = '32px'; ring.style.height = '32px';
+    });
+  });
+
+  // Agent tabs
+  function showAgent(id, btn) {
+    document.querySelectorAll('.agent-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.agent-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // Waitlist
+  function submitWaitlist() {
+    const emailInput = document.getElementById('wl-email');
+    const email = emailInput.value.trim();
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      emailInput.style.borderColor = '#c44';
+      emailInput.placeholder = 'Enter a valid email address';
+      emailInput.focus();
+      return;
+    }
+    emailInput.style.borderColor = '';
+
+    // Save to database — shows in your dashboard Leads tab
+    fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'waitlist',
+        email,
+        date: new Date().toISOString(),
+        status: 'new'
+      })
+    }).catch(() => {}); // silent fail — confirm either way
+
+    // Show confirmation
+    document.getElementById('wf').style.display = 'none';
+    const confirm = document.getElementById('wl-confirm');
+    confirm.classList.add('show');
+    confirm.querySelector('span').textContent = '✦ You\'re on the list. We\'ll be in touch soon.';
+  }
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -40px 0px' });
+  reveals.forEach(r => obs.observe(r));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "routes": [
+    { "src": "/demo", "dest": "/vela-support-agent.html" },
+    { "src": "/pricing", "dest": "/vela-pricing.html" },
+    { "src": "/onboard", "dest": "/vela-onboard.html" },
+    { "src": "/widget", "dest": "/vela-widget-preview.html" },
+    { "src": "/widget.js", "dest": "/widget.js" },
+    { "src": "/api/leads", "dest": "/api/leads.js" },
+    { "src": "/api/chat", "dest": "/api/chat.js" }
+  ]
+}
