@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vela — Sales Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --black: #080808; --void: #0a0a0a; --surface: #111111; --surface2: #161616; --surface3: #1b1b1b;
+    --border: rgba(255,255,255,0.07); --border-lit: rgba(255,255,255,0.13);
+    --gold: #c9a84c; --gold-dim: rgba(201,168,76,0.12); --gold-glow: rgba(201,168,76,0.3);
+    --white: #f0ede8; --muted: rgba(240,237,232,0.45); --dim: rgba(240,237,232,0.12);
+    --green: #4ade80; --red: #f87171; --blue: #60a5fa; --amber: #fbbf24;
+    --sidebar-w: 200px;
+  }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: var(--black); color: var(--white); font-family: 'DM Sans', sans-serif; font-weight: 300; display: flex; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w); flex-shrink: 0;
+    background: var(--void); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; height: 100vh;
+    position: fixed; left: 0; top: 0; z-index: 50;
+  }
+  .sidebar-logo { padding: 22px 18px 18px; border-bottom: 1px solid var(--border); font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 6px; }
+  .sidebar-logo span { color: var(--gold); }
+  .sidebar-sub { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); margin-top: 2px; }
+  .sidebar-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); padding: 18px 18px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 10px 18px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); border-left: 2px solid transparent; transition: all 0.15s; }
+  .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.03); }
+  .nav-item.active { color: var(--gold); border-left-color: var(--gold); background: var(--gold-dim); }
+  .nav-icon { font-size: 13px; width: 14px; text-align: center; }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar-w); flex: 1; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* TOPBAR */
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-title { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+  .topbar-right { display: flex; gap: 10px; align-items: center; }
+  .btn-sm { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; border: 1px solid var(--border-lit); color: var(--muted); padding: 7px 14px; cursor: pointer; background: transparent; transition: all 0.2s; }
+  .btn-sm:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-sm.primary { background: var(--gold); color: var(--black); border-color: var(--gold); font-weight: 500; }
+  .btn-sm.primary:hover { background: #e0ba5a; }
+
+  /* VIEWS */
+  .view { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+  .view.active { display: flex; }
+
+  /* ============ PIPELINE VIEW ============ */
+  #view-pipeline { overflow-x: auto; padding: 20px; gap: 12px; flex-direction: row; align-items: flex-start; }
+  .kanban-col { min-width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+  .col-header { padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+  .col-title { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+  .col-count { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--dim); background: var(--surface2); padding: 2px 7px; }
+  .kanban-card { background: var(--surface); border: 1px solid var(--border); padding: 14px; cursor: pointer; transition: all 0.15s; position: relative; }
+  .kanban-card:hover { border-color: var(--border-lit); background: var(--surface2); }
+  .kanban-card::before { content:''; position:absolute; top:0;left:0;right:0; height:1px; background:linear-gradient(90deg,var(--gold),transparent); opacity:0; transition:opacity 0.2s; }
+  .kanban-card:hover::before { opacity:1; }
+  .card-score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .score-ring { position: relative; width: 32px; height: 32px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 12px; color: var(--gold); }
+  .card-stage-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .card-company { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--white); margin-bottom: 2px; }
+  .card-role { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .card-followup { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1px; color: var(--gold); border: 1px solid rgba(201,168,76,0.25); padding: 4px 8px; cursor: pointer; transition: all 0.2s; display: inline-block; }
+  .card-followup:hover { background: var(--gold-dim); }
+
+  /* Stage colors */
+  .stage-cold { background: rgba(255,255,255,0.15); }
+  .stage-sent { background: var(--blue); }
+  .stage-opened { background: var(--amber); }
+  .stage-replied { background: var(--green); }
+  .stage-booked { background: #a78bfa; }
+
+  /* ============ LEADS VIEW ============ */
+  #view-leads { flex-direction: column; overflow: hidden; }
+  .leads-inner { flex: 1; overflow-y: auto; padding: 0; }
+  .leads-inner::-webkit-scrollbar { width: 3px; }
+  .leads-inner::-webkit-scrollbar-thumb { background: var(--border-lit); }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 10; }
+  th { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); padding: 11px 14px; text-align: left; }
+  td { padding: 11px 14px; font-size: 12px; border-bottom: 1px solid var(--border); }
+  tbody tr { transition: background 0.12s; cursor: pointer; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+  tr:last-child td { border-bottom: none; }
+  .lead-name-cell { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; color: var(--white); }
+  .lead-co { font-size: 10px; color: var(--dim); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .status-badge { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; padding: 3px 7px; border: 1px solid; }
+  .badge-cold { border-color: var(--border-lit); color: var(--muted); }
+  .badge-sent { border-color: rgba(96,165,250,0.4); color: var(--blue); }
+  .badge-opened { border-color: rgba(251,191,36,0.4); color: var(--amber); }
+  .badge-replied { border-color: rgba(74,222,128,0.4); color: var(--green); }
+  .badge-booked { border-color: rgba(167,139,250,0.4); color: #a78bfa; }
+  .compose-btn { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; background: transparent; border: 1px solid var(--border-lit); color: var(--muted); padding: 5px 10px; cursor: pointer; transition: all 0.2s; }
+  .compose-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .mini-score { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; color: var(--gold); }
+  .touch-time { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--dim); }
+
+  /* ============ SEQUENCES VIEW ============ */
+  #view-sequences { overflow-y: auto; padding: 24px; }
+  #view-sequences::-webkit-scrollbar { width: 3px; }
+  #view-sequences::-webkit-scrollbar-thumb { background: var(--border-lit); }
+  .seq-header { margin-bottom: 24px; }
+  .seq-title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; margin-bottom: 4px; }
+  .seq-sub { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--muted); }
+  .seq-stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 28px; }
+  .seq-stat { background: var(--surface); padding: 16px 20px; }
+  .seq-stat-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); margin-bottom: 6px; }
+  .seq-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--gold); }
+  .steps-list { display: flex; flex-direction: column; gap: 12px; }
+  .step-card { background: var(--surface); border: 1px solid var(--border); padding: 18px 20px; display: flex; gap: 20px; align-items: flex-start; position: relative; }
+  .step-card::before { content:''; position:absolute; top:0;left:0; bottom:0; width:2px; background:var(--gold); opacity:0.4; }
+  .step-num-col { flex-shrink: 0; }
+  .step-day { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; color: var(--dim); line-height: 1; }
+  .step-day-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+  .step-info { flex: 1; }
+  .step-name { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+  .step-desc { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 12px; }
+  .step-metrics { display: flex; gap: 20px; }
+  .step-metric { }
+  .step-metric-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: var(--white); }
+  .step-metric-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+
+  /* ============ AI COMPOSE PANEL ============ */
+  .compose-panel {
+    position: fixed; right: 0; top: 0; bottom: 0;
+    width: 440px; background: var(--surface); border-left: 1px solid var(--border-lit);
+    z-index: 100; display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.3s ease;
+  }
+  .compose-panel.open { transform: translateX(0); }
+  .compose-panel::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--gold),transparent); }
+  .cp-header { padding: 20px 22px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .cp-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 3px; }
+  .cp-subtitle { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; color: var(--gold); margin-top: 2px; }
+  .cp-close { background: none; border: 1px solid var(--border-lit); color: var(--muted); padding: 5px 10px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 9px; transition: all 0.2s; }
+  .cp-close:hover { border-color: var(--gold); color: var(--gold); }
+  .cp-body { flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+  .cp-body::-webkit-scrollbar { width: 3px; }
+  .cp-body::-webkit-scrollbar-thumb { background: var(--border-lit); }
+  .cp-lead-card { background: var(--surface2); border: 1px solid var(--border); padding: 14px; }
+  .cp-lead-name { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1px; color: var(--white); margin-bottom: 2px; }
+  .cp-lead-meta { font-size: 12px; color: var(--muted); }
+  .cp-score { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--gold); }
+  .cp-form-row { }
+  .cp-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+  .cp-select { width: 100%; background: var(--void); border: 1px solid var(--border-lit); padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--white); outline: none; appearance: none; cursor: pointer; transition: border-color 0.2s; }
+  .cp-select:focus { border-color: var(--gold); }
+  .cp-select option { background: var(--surface); }
+  .cp-generate-btn { width: 100%; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; background: var(--gold); color: var(--black); border: none; padding: 13px; cursor: pointer; font-weight: 500; transition: background 0.2s; }
+  .cp-generate-btn:hover { background: #e0ba5a; }
+  .cp-generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .cp-output { background: var(--void); border: 1px solid var(--border); padding: 14px; min-height: 120px; position: relative; }
+  .cp-output-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+  .cp-output-text { font-size: 13px; color: var(--white); line-height: 1.65; white-space: pre-wrap; }
+  .cp-output-placeholder { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); }
+  .cp-output-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .cp-loading { display: flex; gap: 4px; align-items: center; padding: 8px 0; }
+  .cp-dot { width: 4px; height: 4px; background: var(--gold); border-radius: 50%; animation: cpblink 1.2s infinite; }
+  .cp-dot:nth-child(2) { animation-delay: 0.2s; }
+  .cp-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes cpblink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  /* ============ LEAD DETAIL PANEL ============ */
+  .lead-detail-panel {
+    position: fixed; right: 0; top: 0; bottom: 0;
+    width: 400px; background: var(--surface); border-left: 1px solid var(--border-lit);
+    z-index: 100; display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform 0.3s ease;
+  }
+  .lead-detail-panel.open { transform: translateX(0); }
+  .lead-detail-panel::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--gold),transparent); }
+  .ldp-header { padding: 20px 22px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .ldp-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .ldp-name { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; }
+  .ldp-body { flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+  .ldp-body::-webkit-scrollbar { width: 3px; }
+  .ldp-body::-webkit-scrollbar-thumb { background: var(--border-lit); }
+  .ldp-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+  .ldp-stat { background: var(--surface2); padding: 14px; }
+  .ldp-stat-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+  .ldp-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: var(--gold); }
+  .seq-progress { display: flex; gap: 6px; align-items: center; }
+  .seq-step-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--border-lit); }
+  .seq-step-dot.done { background: var(--gold); border-color: var(--gold); }
+  .seq-step-dot.current { border-color: var(--gold); background: var(--gold-dim); }
+  .analysis-box { background: var(--void); border: 1px solid var(--border); padding: 14px; }
+  .analysis-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
+  .analysis-text { font-size: 13px; color: var(--muted); line-height: 1.65; white-space: pre-wrap; }
+  .analyze-btn { width: 100%; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; background: transparent; border: 1px solid rgba(201,168,76,0.35); color: var(--gold); padding: 10px; cursor: pointer; transition: all 0.2s; }
+  .analyze-btn:hover { background: var(--gold-dim); }
+  .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .notes-box { background: var(--void); border: 1px solid var(--border); padding: 14px; }
+  .notes-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div id="sales-gate" style="position:fixed;inset:0;z-index:9999;background:#080808;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;">
+  <div style="width:100%;max-width:360px;background:#111;border:1px solid rgba(255,255,255,0.13);position:relative;">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#c9a84c,transparent);"></div>
+    <div style="padding:26px 26px 20px;border-bottom:1px solid rgba(255,255,255,0.07);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:6px;color:#f0ede8;">VE<span style="color:#c9a84c;">L</span>A</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(240,237,232,0.45);margin-top:3px;">Sales Agent · Private Access</div>
+    </div>
+    <div style="padding:22px 26px 26px;">
+      <label style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(240,237,232,0.45);margin-bottom:8px;display:block;">Password</label>
+      <input id="sg-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkSalesGate()" style="width:100%;background:#0a0a0a;border:1px solid rgba(255,255,255,0.13);padding:11px 14px;font-family:'DM Mono',monospace;font-size:14px;color:#f0ede8;outline:none;letter-spacing:4px;margin-bottom:10px;box-sizing:border-box;">
+      <button onclick="checkSalesGate()" style="width:100%;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:#c9a84c;color:#000;border:none;padding:12px;cursor:pointer;font-weight:500;">Enter →</button>
+      <div id="sg-error" style="font-family:'DM Mono',monospace;font-size:10px;color:#f87171;margin-top:8px;display:none;">Incorrect password.</div>
+    </div>
+  </div>
+</div>
+<script>
+  function checkSalesGate() {
+    const pw = localStorage.getItem('vela_password') || 'Ikwetion6@$';
+    if (document.getElementById('sg-input').value === pw) {
+      document.getElementById('sales-gate').style.display = 'none';
+    } else {
+      document.getElementById('sg-error').style.display = 'block';
+      document.getElementById('sg-input').value = '';
+    }
+  }
+</script>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">VE<span>L</span>A<div class="sidebar-sub">Sales Agent</div></div>
+  <div class="sidebar-label">Views</div>
+  <div class="nav-item active" onclick="showView('pipeline',this)">
+    <span class="nav-icon">▦</span> Pipeline
+  </div>
+  <div class="nav-item" onclick="showView('leads',this)">
+    <span class="nav-icon">◉</span> All Leads
+  </div>
+  <div class="nav-item" onclick="showView('sequences',this)">
+    <span class="nav-icon">◎</span> Sequences
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="view-title">Pipeline</div>
+    <div class="topbar-right">
+      <button class="btn-sm" onclick="openCompose(null)">✦ AI Compose</button>
+      <button class="btn-sm primary">+ Add Lead</button>
+    </div>
+  </div>
+
+  <!-- PIPELINE VIEW -->
+  <div class="view active" id="view-pipeline">
+    <div style="display:flex;gap:12px;padding:20px;overflow-x:auto;align-items:flex-start;flex:1;">
+      <!-- cols injected by JS -->
+    </div>
+  </div>
+
+  <!-- LEADS VIEW -->
+  <div class="view" id="view-leads">
+    <div class="leads-inner">
+      <table>
+        <thead><tr>
+          <th>Lead</th><th>Score</th><th>Status</th><th>Last Touch</th><th>Seq Step</th><th>Action</th>
+        </tr></thead>
+        <tbody id="leads-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SEQUENCES VIEW -->
+  <div class="view" id="view-sequences">
+    <div class="seq-header">
+      <div class="seq-title">Outreach Sequence</div>
+      <div class="seq-sub">4-step automated sequence · AI-personalised at each touchpoint</div>
+    </div>
+    <div class="seq-stats-row">
+      <div class="seq-stat"><div class="seq-stat-label">Avg Open Rate</div><div class="seq-stat-val">62%</div></div>
+      <div class="seq-stat"><div class="seq-stat-label">Avg Reply Rate</div><div class="seq-stat-val">18%</div></div>
+      <div class="seq-stat"><div class="seq-stat-label">Meeting Rate</div><div class="seq-stat-val">7%</div></div>
+    </div>
+    <div class="steps-list">
+      <div class="step-card">
+        <div class="step-num-col"><div class="step-day">D1</div><div class="step-day-label">Day</div></div>
+        <div class="step-info">
+          <div class="step-name">Cold Intro</div>
+          <div class="step-desc">Initial personalised outreach. AI selects the strongest opening angle — pain point, social proof, or ROI — based on lead data and industry.</div>
+          <div class="step-metrics">
+            <div class="step-metric"><div class="step-metric-val">68%</div><div class="step-metric-label">Open Rate</div></div>
+            <div class="step-metric"><div class="step-metric-val">14%</div><div class="step-metric-label">Reply Rate</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num-col"><div class="step-day">D4</div><div class="step-day-label">Day</div></div>
+        <div class="step-info">
+          <div class="step-name">Value Add</div>
+          <div class="step-desc">Follow-up with a relevant insight, case study, or stat. References the first email naturally. No ask — just value delivery.</div>
+          <div class="step-metrics">
+            <div class="step-metric"><div class="step-metric-val">55%</div><div class="step-metric-label">Open Rate</div></div>
+            <div class="step-metric"><div class="step-metric-val">19%</div><div class="step-metric-label">Reply Rate</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num-col"><div class="step-day">D8</div><div class="step-day-label">Day</div></div>
+        <div class="step-info">
+          <div class="step-name">Soft Ask</div>
+          <div class="step-desc">Introduces a light CTA — a 15-minute call or a specific question. AI calibrates urgency based on whether prior emails were opened.</div>
+          <div class="step-metrics">
+            <div class="step-metric"><div class="step-metric-val">61%</div><div class="step-metric-label">Open Rate</div></div>
+            <div class="step-metric"><div class="step-metric-val">21%</div><div class="step-metric-label">Reply Rate</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num-col"><div class="step-day">D14</div><div class="step-day-label">Day</div></div>
+        <div class="step-info">
+          <div class="step-name">Breakup Email</div>
+          <div class="step-desc">Final touch. Creates urgency and closes the loop. High reply rates — many leads respond here who ignored earlier messages.</div>
+          <div class="step-metrics">
+            <div class="step-metric"><div class="step-metric-val">70%</div><div class="step-metric-label">Open Rate</div></div>
+            <div class="step-metric"><div class="step-metric-val">26%</div><div class="step-metric-label">Reply Rate</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- AI COMPOSE PANEL -->
+<div class="compose-panel" id="compose-panel">
+  <div class="cp-header">
+    <div>
+      <div class="cp-title">AI Compose</div>
+      <div class="cp-subtitle">Powered by VELA · Claude</div>
+    </div>
+    <button class="cp-close" onclick="closeCompose()">✕</button>
+  </div>
+  <div class="cp-body">
+    <div class="cp-lead-card" id="cp-lead-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="cp-lead-name" id="cp-lead-name">Select a lead</div>
+          <div class="cp-lead-meta" id="cp-lead-meta">—</div>
+        </div>
+        <div class="cp-score" id="cp-score">—</div>
+      </div>
+    </div>
+    <div class="cp-form-row">
+      <label class="cp-label">Sequence Step</label>
+      <select class="cp-select" id="cp-step">
+        <option value="1">Step 1 — Cold Intro (Day 1)</option>
+        <option value="2">Step 2 — Value Add (Day 4)</option>
+        <option value="3">Step 3 — Soft Ask (Day 8)</option>
+        <option value="4">Step 4 — Breakup Email (Day 14)</option>
+      </select>
+    </div>
+    <div class="cp-form-row">
+      <label class="cp-label">Tone</label>
+      <select class="cp-select" id="cp-tone">
+        <option value="professional">Professional</option>
+        <option value="casual">Casual</option>
+        <option value="bold">Bold</option>
+      </select>
+    </div>
+    <div class="cp-form-row">
+      <label class="cp-label">Opening Angle</label>
+      <select class="cp-select" id="cp-angle">
+        <option value="pain point">Pain Point</option>
+        <option value="social proof">Social Proof</option>
+        <option value="ROI / outcome">ROI / Outcome</option>
+      </select>
+    </div>
+    <button class="cp-generate-btn" id="cp-gen-btn" onclick="generateEmail()">✦ Generate Email</button>
+    <div class="cp-output">
+      <div class="cp-output-label">Generated Email</div>
+      <div id="cp-output-content">
+        <div class="cp-output-placeholder">Configure options above and hit Generate.</div>
+      </div>
+      <div class="cp-output-actions" id="cp-output-actions" style="display:none;">
+        <button class="btn-sm">Copy</button>
+        <button class="btn-sm primary" onclick="generateEmail()">Regenerate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEAD DETAIL PANEL -->
+<div class="lead-detail-panel" id="lead-detail-panel">
+  <div class="ldp-header">
+    <div class="ldp-top">
+      <div>
+        <div class="ldp-name" id="ldp-name">Lead</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="ldp-role">—</div>
+      </div>
+      <button class="cp-close" onclick="closeLeadDetail()">✕</button>
+    </div>
+  </div>
+  <div class="ldp-body">
+    <div class="ldp-stat-grid" id="ldp-stats"></div>
+    <div>
+      <div class="cp-label">Sequence Progress</div>
+      <div class="seq-progress" id="ldp-seq-progress"></div>
+    </div>
+    <button class="analyze-btn" id="analyze-btn" onclick="analyzeLead()">✦ Analyze This Lead</button>
+    <div class="analysis-box" id="analysis-box" style="display:none;">
+      <div class="analysis-label">VELA Analysis</div>
+      <div class="analysis-text" id="analysis-text"></div>
+    </div>
+    <div class="notes-box">
+      <div class="cp-label" style="margin-bottom:8px;">Notes</div>
+      <div class="notes-text" id="ldp-notes">No notes added yet.</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-sm" style="flex:1;" onclick="openComposeFromDetail()">✦ Compose Email</button>
+      <button class="btn-sm primary" style="flex:1;">Mark Replied →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- DATA ----
+  const STAGES = ['Cold','Sent','Opened','Replied','Booked'];
+  const STAGE_COLORS = ['stage-cold','stage-sent','stage-opened','stage-replied','stage-booked'];
+
+  let leads = [
+    { id:1, name:'Sarah Chen', role:'VP Operations', company:'Meridian Logistics', industry:'Logistics', score:87, stage:'Replied', lastTouch:'2h ago', seqStep:3, notes:'Opened all 3 emails. Replied asking for more info on pricing.' },
+    { id:2, name:'Marcus Webb', role:'CEO', company:'Vantage Capital', industry:'Finance', score:79, stage:'Opened', lastTouch:'1d ago', seqStep:2, notes:'Opened email twice. No reply yet.' },
+    { id:3, name:'Priya Nair', role:'Head of Customer Success', company:'Orbit SaaS', industry:'Software', score:93, stage:'Booked', lastTouch:'3h ago', seqStep:4, notes:'Meeting booked for Thursday 2pm.' },
+    { id:4, name:'James Holloway', role:'Operations Director', company:'Apex Group', industry:'Consulting', score:72, stage:'Sent', lastTouch:'3d ago', seqStep:1, notes:'Initial email sent. No opens yet.' },
+    { id:5, name:'Elena Vasquez', role:'Founder', company:'Lucent Studio', industry:'Creative Agency', score:81, stage:'Cold', lastTouch:'—', seqStep:0, notes:'Identified via LinkedIn. High fit — small ops team.' },
+    { id:6, name:'Tom Aldridge', role:'COO', company:'FrontLine Health', industry:'Healthcare', score:68, stage:'Sent', lastTouch:'5d ago', seqStep:1, notes:'Low open rate in this segment — try pain point angle.' },
+    { id:7, name:'Yuki Tanaka', role:'Director of Growth', company:'Noma Commerce', industry:'E-Commerce', score:84, stage:'Opened', lastTouch:'6h ago', seqStep:2, notes:'Strong signal. Revisit with social proof angle.' },
+  ];
+
+  let activeLead = null;
+
+  // ---- VIEWS ----
+  function showView(id, el) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('view-' + id).classList.add('active');
+    el.classList.add('active');
+    const titles = { pipeline:'Pipeline', leads:'All Leads', sequences:'Sequences' };
+    document.getElementById('view-title').textContent = titles[id];
+  }
+
+  // ---- PIPELINE ----
+  function renderPipeline() {
+    const container = document.querySelector('#view-pipeline > div');
+    container.innerHTML = STAGES.map((stage, si) => {
+      const stageleads = leads.filter(l => l.stage === stage);
+      const cards = stageleads.map(l => `
+        <div class="kanban-card" onclick="openLeadDetail(${l.id})">
+          <div class="card-score-row">
+            <div class="score-ring">
+              <svg width="32" height="32" viewBox="0 0 32 32">
+                <circle cx="16" cy="16" r="12" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3"/>
+                <circle cx="16" cy="16" r="12" fill="none" stroke="#c9a84c" stroke-width="3"
+                  stroke-dasharray="${Math.round(l.score/100*75.4)} 75.4"/>
+              </svg>
+              <div class="score-num">${l.score}</div>
+            </div>
+            <div class="card-stage-dot ${STAGE_COLORS[si]}"></div>
+          </div>
+          <div class="card-company">${l.company}</div>
+          <div class="card-role">${l.name} · ${l.role}</div>
+          <div class="card-followup" onclick="event.stopPropagation();openCompose(${l.id})">✦ AI Follow-up</div>
+        </div>`).join('');
+      return `
+        <div class="kanban-col">
+          <div class="col-header">
+            <div class="col-title">${stage}</div>
+            <div class="col-count">${stageleads.length}</div>
+          </div>
+          ${cards || '<div style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--dim);padding:8px 0;">No leads</div>'}
+        </div>`;
+    }).join('');
+  }
+
+  // ---- LEADS TABLE ----
+  function renderLeadsTable() {
+    const stageClass = { Cold:'badge-cold', Sent:'badge-sent', Opened:'badge-opened', Replied:'badge-replied', Booked:'badge-booked' };
+    document.getElementById('leads-tbody').innerHTML = leads.map(l => `
+      <tr onclick="openLeadDetail(${l.id})">
+        <td>
+          <div class="lead-name-cell">${l.name}</div>
+          <div class="lead-co">${l.company} · ${l.role}</div>
+        </td>
+        <td><div class="mini-score">${l.score}</div></td>
+        <td><span class="status-badge ${stageClass[l.stage]}">${l.stage}</span></td>
+        <td><div class="touch-time">${l.lastTouch}</div></td>
+        <td><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);">Step ${l.seqStep}/4</div></td>
+        <td><button class="compose-btn" onclick="event.stopPropagation();openCompose(${l.id})">✦ Compose</button></td>
+      </tr>`).join('');
+  }
+
+  // ---- COMPOSE PANEL ----
+  function openCompose(leadId) {
+    const lead = leadId ? leads.find(l => l.id === leadId) : null;
+    document.getElementById('cp-lead-name').textContent = lead ? lead.name : 'No lead selected';
+    document.getElementById('cp-lead-meta').textContent = lead ? `${lead.role} · ${lead.company}` : 'Select a lead from the pipeline';
+    document.getElementById('cp-score').textContent = lead ? lead.score : '—';
+    if (lead) document.getElementById('cp-step').value = Math.min(4, lead.seqStep + 1);
+    document.getElementById('cp-output-content').innerHTML = '<div class="cp-output-placeholder">Configure options above and hit Generate.</div>';
+    document.getElementById('cp-output-actions').style.display = 'none';
+    activeLead = lead;
+    document.getElementById('compose-panel').classList.add('open');
+  }
+
+  function closeCompose() { document.getElementById('compose-panel').classList.remove('open'); }
+
+  async function generateEmail() {
+    const step = document.getElementById('cp-step').value;
+    const tone = document.getElementById('cp-tone').value;
+    const angle = document.getElementById('cp-angle').value;
+    const lead = activeLead;
+
+    const stepNames = { '1':'cold intro', '2':'value-add follow-up', '3':'soft ask with CTA', '4':'breakup / final email' };
+
+    const prompt = lead
+      ? `Write a ${tone} cold outreach email (${stepNames[step]}) for a B2B sales sequence. The lead is ${lead.name}, ${lead.role} at ${lead.company} (${lead.industry} industry). Lead score: ${lead.score}/100. Use a ${angle} opening angle. Keep it under 120 words. Make it feel human and specific — not generic. Output only the email with Subject: line first, then body. No commentary.`
+      : `Write a ${tone} cold outreach email (${stepNames[step]}) for a B2B SaaS company selling AI agents to businesses. Use a ${angle} opening angle. Keep it under 120 words. Output only the email with Subject: line first, then body. No commentary.`;
+
+    document.getElementById('cp-gen-btn').disabled = true;
+    document.getElementById('cp-output-content').innerHTML = '<div class="cp-loading"><div class="cp-dot"></div><div class="cp-dot"></div><div class="cp-dot"></div></div>';
+    document.getElementById('cp-output-actions').style.display = 'none';
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || 'Error generating email.';
+      document.getElementById('cp-output-content').innerHTML = `<div class="cp-output-text">${text}</div>`;
+      document.getElementById('cp-output-actions').style.display = 'flex';
+
+      // Wire copy button
+      document.querySelector('#cp-output-actions .btn-sm').onclick = () => {
+        navigator.clipboard.writeText(text).catch(() => {});
+      };
+    } catch {
+      document.getElementById('cp-output-content').innerHTML = '<div class="cp-output-placeholder" style="color:var(--red)">Connection error. Try again.</div>';
+    }
+    document.getElementById('cp-gen-btn').disabled = false;
+  }
+
+  // ---- LEAD DETAIL ----
+  function openLeadDetail(id) {
+    const l = leads.find(x => x.id === id);
+    if (!l) return;
+    activeLead = l;
+    document.getElementById('ldp-name').textContent = l.name;
+    document.getElementById('ldp-role').textContent = `${l.role} · ${l.company}`;
+    document.getElementById('ldp-stats').innerHTML = `
+      <div class="ldp-stat"><div class="ldp-stat-label">Score</div><div class="ldp-stat-val">${l.score}</div></div>
+      <div class="ldp-stat"><div class="ldp-stat-label">Stage</div><div class="ldp-stat-val" style="font-size:16px;letter-spacing:1px;">${l.stage}</div></div>
+      <div class="ldp-stat"><div class="ldp-stat-label">Industry</div><div class="ldp-stat-val" style="font-size:14px;letter-spacing:1px;">${l.industry}</div></div>
+      <div class="ldp-stat"><div class="ldp-stat-label">Last Touch</div><div class="ldp-stat-val" style="font-size:16px;">${l.lastTouch}</div></div>`;
+
+    // Sequence progress dots
+    const dots = [1,2,3,4].map(i =>
+      `<div class="seq-step-dot ${i < l.seqStep ? 'done' : i === l.seqStep ? 'current' : ''}"></div>
+       ${i < 4 ? '<div style="flex:1;height:1px;background:var(--border)"></div>' : ''}`
+    ).join('');
+    document.getElementById('ldp-seq-progress').innerHTML = dots;
+    document.getElementById('ldp-notes').textContent = l.notes;
+
+    // Reset analysis
+    document.getElementById('analysis-box').style.display = 'none';
+    document.getElementById('analysis-text').textContent = '';
+    document.getElementById('analyze-btn').disabled = false;
+
+    document.getElementById('lead-detail-panel').classList.add('open');
+  }
+
+  function closeLeadDetail() { document.getElementById('lead-detail-panel').classList.remove('open'); }
+
+  function openComposeFromDetail() {
+    closeLeadDetail();
+    if (activeLead) openCompose(activeLead.id);
+  }
+
+  async function analyzeLead() {
+    const l = activeLead;
+    if (!l) return;
+    document.getElementById('analyze-btn').disabled = true;
+    document.getElementById('analysis-box').style.display = 'block';
+    document.getElementById('analysis-text').innerHTML = '<div class="cp-loading"><div class="cp-dot"></div><div class="cp-dot"></div><div class="cp-dot"></div></div>';
+
+    const prompt = `You are a sharp B2B sales analyst. Analyze this lead and give exactly 3 bullet points of action recommendations. Be specific and direct.
+
+Lead: ${l.name}, ${l.role} at ${l.company} (${l.industry})
+Score: ${l.score}/100
+Stage: ${l.stage}
+Sequence step: ${l.seqStep}/4
+Last touch: ${l.lastTouch}
+Notes: ${l.notes}
+
+Output only 3 bullets starting with •. No intro, no summary. Each bullet under 20 words. Be sharp.`;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || 'Analysis unavailable.';
+      document.getElementById('analysis-text').textContent = text;
+    } catch {
+      document.getElementById('analysis-text').textContent = 'Connection error. Try again.';
+      document.getElementById('analyze-btn').disabled = false;
+    }
+  }
+
+  // ---- INIT ----
+  renderPipeline();
+  renderLeadsTable();
+</script>
+</body>
+</html>

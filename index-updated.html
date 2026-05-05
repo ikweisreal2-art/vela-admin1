@@ -328,7 +328,6 @@
   <div class="nav-item active" onclick="showView('dashboard',this)"><span>◈</span> Dashboard</div>
   <div class="nav-item" onclick="showView('leads',this)"><span>◎</span> Leads <span class="nav-badge" id="leads-badge">0</span></div>
   <div class="nav-item" onclick="showView('clients',this)"><span>◉</span> Clients</div>
-  <div class="nav-item" onclick="showView('cao',this)"><span>◈</span> CAO Clients</div>
   <div class="nav-item" onclick="showView('revenue',this)"><span>◌</span> Revenue</div>
   <div class="nav-item" onclick="showView('agents',this)"><span>◍</span> Agents</div>
   <div class="nav-item" onclick="showView('settings',this)"><span>⊙</span> Settings</div>
@@ -357,10 +356,10 @@
   <!-- DASHBOARD VIEW -->
   <div class="view active" id="view-dashboard">
     <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-label">Agent MRR</div><div class="kpi-value" id="kpi-mrr">$0</div><div class="kpi-delta up" id="kpi-mrr-delta">↑ 0% of $1M target</div></div>
-      <div class="kpi-card"><div class="kpi-label">CAO Revenue</div><div class="kpi-value" id="kpi-cao-rev">$0</div><div class="kpi-delta up" id="kpi-cao-delta">CAO service contracts</div></div>
-      <div class="kpi-card"><div class="kpi-label">Active Clients</div><div class="kpi-value" id="kpi-clients">0</div><div class="kpi-delta neutral" id="kpi-clients-sub">agents + CAO</div></div>
+      <div class="kpi-card"><div class="kpi-label">Monthly Recurring Revenue</div><div class="kpi-value" id="kpi-mrr">$0</div><div class="kpi-delta up" id="kpi-mrr-delta">↑ 0% of $1M target</div></div>
+      <div class="kpi-card"><div class="kpi-label">Active Clients</div><div class="kpi-value" id="kpi-clients">0</div><div class="kpi-delta neutral">of 70 to $1M ARR</div></div>
       <div class="kpi-card"><div class="kpi-label">Waitlist Leads</div><div class="kpi-value" id="kpi-leads">0</div><div class="kpi-delta up" id="kpi-leads-delta">pending follow-up</div></div>
+      <div class="kpi-card"><div class="kpi-label">Avg. Satisfaction</div><div class="kpi-value" id="kpi-sat">—</div><div class="kpi-delta up">↑ +3pts from last month</div></div>
     </div>
     <div class="charts-row">
       <div class="chart-card"><div class="chart-title">MRR Growth — Last 6 Months</div><div class="bar-chart" id="mrr-chart"></div></div>
@@ -410,40 +409,14 @@
     <table><thead><tr><th>Client</th><th>Plan</th><th>MRR</th><th>Conversations</th><th>Satisfaction</th><th>Since</th></tr></thead><tbody id="clients-tbody"></tbody></table>
   </div>
 
-  <!-- CAO CLIENTS VIEW -->
-  <div class="view" id="view-cao">
-    <div class="section-header">
-      <div class="section-h">CAO Service Clients</div>
-      <button class="btn-add" style="font-size:9px;padding:6px 14px;" onclick="openNewCAOClient()">+ New CAO Client</button>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:24px;">
-      <div class="kpi-card"><div class="kpi-label">CAO Clients</div><div class="kpi-value" id="cao-count">0</div></div>
-      <div class="kpi-card"><div class="kpi-label">Monthly CAO Revenue</div><div class="kpi-value" id="cao-mrr">$0</div></div>
-      <div class="kpi-card"><div class="kpi-label">Avg Contract Value</div><div class="kpi-value" id="cao-avg">$0</div></div>
-    </div>
-    <table id="cao-table">
-      <thead><tr><th>Company</th><th>Industry</th><th>Contract</th><th>Monthly Fee</th><th>Market</th><th>Status</th></tr></thead>
-      <tbody id="cao-tbody"></tbody>
-    </table>
-    <div id="cao-empty" class="leads-empty" style="display:none;">No CAO clients yet. CAO service starts at $5,000/month.</div>
-  </div>
+  <!-- REVENUE VIEW -->
   <div class="view" id="view-revenue">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;">
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Agent MRR</div>
-        <div class="rev-big" id="rev-mrr">$0</div>
-      </div>
-      <div>
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">CAO Revenue</div>
-        <div class="rev-big" id="rev-cao" style="color:var(--white);">$0</div>
-      </div>
-    </div>
-    <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:4px;">Total Combined Revenue</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:3px;color:var(--gold);margin-bottom:28px;" id="rev-total">$0</div>
+    <div class="rev-big" id="rev-mrr">$0</div>
+    <div class="rev-sub">Monthly Recurring Revenue</div>
     <div class="rev-grid">
       <div class="rev-cell"><div class="rev-cell-label">Annual Run Rate</div><div class="rev-cell-val" id="rev-arr">$0</div></div>
       <div class="rev-cell"><div class="rev-cell-label">Gap to $1M ARR</div><div class="rev-cell-val" style="color:var(--muted)" id="rev-gap">$1,000,000</div></div>
-      <div class="rev-cell"><div class="rev-cell-label">Avg Agent Revenue</div><div class="rev-cell-val" id="rev-avg">$0</div></div>
+      <div class="rev-cell"><div class="rev-cell-label">Avg Revenue / Client</div><div class="rev-cell-val" id="rev-avg">$0</div></div>
       <div class="rev-cell"><div class="rev-cell-label">Clients to $1M ARR</div><div class="rev-cell-val" id="rev-clients-needed">70</div></div>
     </div>
     <div class="section-h" style="margin-bottom:12px;">Revenue Per Client</div>
@@ -456,25 +429,6 @@
       <div class="agent-card"><div class="agent-card-icon">🤖</div><div class="agent-card-name">Support Agent</div><div class="agent-card-desc">24/7 customer support trained on client FAQs. Handles tickets, escalations, and multi-channel inquiries.</div><div class="agent-card-stat"><div class="agent-card-num" id="support-deploys">0</div><div><div class="agent-card-unit">Active</div><div class="agent-card-deploy">Deployments</div></div></div></div>
       <div class="agent-card"><div class="agent-card-icon">📤</div><div class="agent-card-name">Sales Agent</div><div class="agent-card-desc">Automated outreach, lead scoring, and follow-up sequences. Finds and warms prospects autonomously.</div><div class="agent-card-stat"><div class="agent-card-num" id="sales-deploys">0</div><div><div class="agent-card-unit">Active</div><div class="agent-card-deploy">Deployments</div></div></div></div>
       <div class="agent-card"><div class="agent-card-icon">⚙️</div><div class="agent-card-name">Ops Agent</div><div class="agent-card-desc">Internal workflow automation, reporting, scheduling, and task routing. The silent operator.</div><div class="agent-card-stat"><div class="agent-card-num" id="ops-deploys">0</div><div><div class="agent-card-unit">Active</div><div class="agent-card-deploy">Deployments</div></div></div></div>
-      <div class="agent-card" style="border-color:rgba(201,168,76,0.4);grid-column:1/-1;">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);"></div>
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;">
-          <div>
-            <div class="agent-card-icon">👑</div>
-            <div class="agent-card-name">CAO Service</div>
-            <div class="agent-card-desc" style="max-width:480px;">Chief Agent Officer — you manage the full AI workforce for enterprise clients. Strategy, deployment, and ongoing optimisation. $5,000–$20,000/month per client.</div>
-          </div>
-          <div style="display:flex;gap:32px;flex-wrap:wrap;">
-            <div class="agent-card-stat"><div class="agent-card-num" id="cao-deploys">0</div><div><div class="agent-card-unit">Active</div><div class="agent-card-deploy">CAO Clients</div></div></div>
-            <div class="agent-card-stat"><div class="agent-card-num" id="cao-rev-display">$0</div><div><div class="agent-card-unit">Monthly</div><div class="agent-card-deploy">CAO Revenue</div></div></div>
-          </div>
-        </div>
-        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-          <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;padding:4px 10px;border:1px solid rgba(201,168,76,0.3);color:var(--gold);">AFRICA</span>
-          <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;padding:4px 10px;border:1px solid rgba(201,168,76,0.3);color:var(--gold);">SOUTHEAST ASIA</span>
-          <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;padding:4px 10px;border:1px solid rgba(201,168,76,0.3);color:var(--gold);">LATIN AMERICA</span>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -588,22 +542,8 @@
       <div class="nc-row"><label class="nc-label">Business Name</label><input class="nc-input" id="nc-name" placeholder="Meridian Co."></div>
       <div class="nc-row"><label class="nc-label">Industry</label><input class="nc-input" id="nc-industry" placeholder="Logistics"></div>
       <div class="nc-row"><label class="nc-label">Contact Email</label><input class="nc-input" id="nc-email" placeholder="client@business.com" type="email"></div>
-      <div class="nc-row">
-        <label class="nc-label">Service Type</label>
-        <select class="nc-select" id="nc-service" onchange="toggleServiceFields()">
-          <option value="agent">AI Agent ($499–$999/mo)</option>
-          <option value="cao">CAO Service ($5,000–$20,000/mo)</option>
-        </select>
-      </div>
-      <div id="nc-agent-fields">
-        <div class="nc-row"><label class="nc-label">Plan</label><select class="nc-select" id="nc-plan"><option value="Starter">Starter — $499/mo</option><option value="Growth">Growth — $999/mo</option><option value="Enterprise">Enterprise — Custom</option></select></div>
-        <div class="nc-row"><label class="nc-label">Agents</label><select class="nc-select" id="nc-agents"><option value="Support">Support only</option><option value="Support, Sales">Support + Sales</option><option value="Support, Sales, Ops">All 3 Agents</option></select></div>
-      </div>
-      <div id="nc-cao-fields" style="display:none;">
-        <div class="nc-row"><label class="nc-label">Market</label><select class="nc-select" id="nc-market"><option>Africa</option><option>Southeast Asia</option><option>Latin America</option><option>Global</option></select></div>
-        <div class="nc-row"><label class="nc-label">Monthly Fee ($)</label><input class="nc-input" id="nc-cao-fee" type="number" placeholder="5000" min="5000" max="20000"></div>
-        <div class="nc-row"><label class="nc-label">Contract Length</label><select class="nc-select" id="nc-contract"><option>3 months</option><option>6 months</option><option>12 months</option></select></div>
-      </div>
+      <div class="nc-row"><label class="nc-label">Plan</label><select class="nc-select" id="nc-plan"><option value="Starter">Starter — $499/mo</option><option value="Growth">Growth — $999/mo</option><option value="Enterprise">Enterprise — Custom</option></select></div>
+      <div class="nc-row"><label class="nc-label">Agents</label><select class="nc-select" id="nc-agents"><option value="Support">Support only</option><option value="Support, Sales">Support + Sales</option><option value="Support, Sales, Ops">All 3 Agents</option></select></div>
     </div>
     <div class="nc-footer"><button class="btn-cancel" onclick="closeModal('nc-modal')">Cancel</button><button class="btn-confirm" onclick="addClient()">Add Client →</button></div>
   </div>
@@ -623,8 +563,8 @@
 
 <script>
   // ── PASSWORD ────────────────────────────────────────────────────
-  // Default password is: vela2025
-  // Change it in Settings → Operator Profile
+  // Default password is: Ikwetion6@$
+  // Change it in Settings → Operator Profile → Change Password
   let DASHBOARD_PASSWORD = localStorage.getItem('vela_password') || 'Ikwetion6@$';
 
   function checkPassword() {
@@ -665,20 +605,13 @@
   // ── DATA ────────────────────────────────────────────────────────
   // Clients stored in localStorage so they persist
   let clients = JSON.parse(localStorage.getItem('vela_clients') || '[]');
-  let caoClients = JSON.parse(localStorage.getItem('vela_cao_clients') || '[]');
   let leads = JSON.parse(localStorage.getItem('vela_leads') || '[]');
   let activeLead = null;
 
+  // If no clients yet, start empty (no fake demo data)
   function saveData() {
     localStorage.setItem('vela_clients', JSON.stringify(clients));
-    localStorage.setItem('vela_cao_clients', JSON.stringify(caoClients));
     localStorage.setItem('vela_leads', JSON.stringify(leads));
-  }
-
-  function toggleServiceFields() {
-    const service = document.getElementById('nc-service').value;
-    document.getElementById('nc-agent-fields').style.display = service === 'agent' ? 'block' : 'none';
-    document.getElementById('nc-cao-fields').style.display = service === 'cao' ? 'block' : 'none';
   }
 
   // ── LEADS — fetch from real database ───────────────────────────
@@ -714,7 +647,6 @@
 
   // ── RENDER ──────────────────────────────────────────────────────
   function calcMRR() { return clients.reduce((s,c) => s + (c.mrr||0), 0); }
-  function calcCAORev() { return caoClients.reduce((s,c) => s + (c.fee||0), 0); }
   function calcAvgSat() {
     const active = clients.filter(c => c.sat);
     return active.length ? Math.round(active.reduce((s,c) => s + c.sat, 0) / active.length) + '%' : '—';
@@ -722,19 +654,15 @@
 
   function updateAll() {
     const mrr = calcMRR();
-    const caoRev = calcCAORev();
-    const totalRev = mrr + caoRev;
     const newLeads = leads.filter(l => l.status === 'new').length;
-    const pct = Math.min(100, Math.round(totalRev / 83333 * 100));
 
     // KPIs
     document.getElementById('kpi-mrr').textContent = '$' + mrr.toLocaleString();
-    document.getElementById('kpi-cao-rev').textContent = '$' + caoRev.toLocaleString();
-    document.getElementById('kpi-clients').textContent = clients.length + caoClients.length;
-    document.getElementById('kpi-clients-sub').textContent = clients.length + ' agents · ' + caoClients.length + ' CAO';
+    document.getElementById('kpi-clients').textContent = clients.length;
     document.getElementById('kpi-leads').textContent = leads.length;
-    document.getElementById('kpi-mrr-delta').textContent = `↑ ${pct}% of $1M target`;
-    document.getElementById('kpi-cao-delta').textContent = caoClients.length + ' active CAO contract' + (caoClients.length !== 1 ? 's' : '');
+    document.getElementById('kpi-sat').textContent = calcAvgSat();
+    const pct = Math.min(100, Math.round(mrr / 83333 * 100));
+    document.getElementById('kpi-mrr-delta').textContent = `↑ ${pct}% of $1M ARR target`;
     document.getElementById('kpi-leads-delta').textContent = newLeads > 0 ? `${newLeads} new — follow up` : 'all followed up';
 
     // Leads badge
@@ -742,9 +670,9 @@
     document.getElementById('leads-badge').style.display = newLeads > 0 ? 'inline' : 'none';
 
     // Tracker
-    document.getElementById('tracker-mrr').textContent = '$' + totalRev.toLocaleString() + ' / $83,333 / mo';
+    document.getElementById('tracker-mrr').textContent = '$' + mrr.toLocaleString() + ' / $83,333 / mo';
     document.getElementById('tracker-bar').style.width = pct + '%';
-    const need = Math.max(0, Math.ceil((83333 - totalRev) / 1200));
+    const need = Math.max(0, Math.ceil((83333 - mrr) / 1200));
     document.getElementById('tracker-clients-needed').textContent = need;
 
     // Donut
@@ -754,8 +682,7 @@
     renderDashboardTable();
     renderClientsTable();
     renderLeadsTable();
-    renderCAOTable();
-    renderRevenueView(mrr, caoRev, totalRev);
+    renderRevenueView(mrr);
     renderAgentsView();
   }
 
@@ -818,54 +745,17 @@
       </tr>`).join('');
   }
 
-  function renderRevenueView(mrr, caoRev, totalRev) {
+  function renderRevenueView(mrr) {
     document.getElementById('rev-mrr').textContent = '$' + mrr.toLocaleString();
-    document.getElementById('rev-cao').textContent = '$' + caoRev.toLocaleString();
-    document.getElementById('rev-total').textContent = '$' + totalRev.toLocaleString();
-    const arr = totalRev * 12;
+    const arr = mrr * 12;
     document.getElementById('rev-arr').textContent = '$' + arr.toLocaleString();
     document.getElementById('rev-gap').textContent = '$' + Math.max(0, 1000000 - arr).toLocaleString();
     document.getElementById('rev-avg').textContent = clients.length ? '$' + Math.round(mrr/clients.length).toLocaleString() : '$0';
-    document.getElementById('rev-clients-needed').textContent = Math.max(0, Math.ceil((83333-totalRev)/1200));
-    const allRevClients = [
-      ...clients.map(c => ({ name: c.name, amount: c.mrr||0, type: 'Agent' })),
-      ...caoClients.map(c => ({ name: c.name, amount: c.fee||0, type: 'CAO' }))
-    ];
-    const maxRev = Math.max(...allRevClients.map(c=>c.amount), 1);
-    document.getElementById('rev-breakdown').innerHTML = allRevClients.length
-      ? allRevClients.map(c => `<div class="client-rev-row"><div class="client-rev-name">${c.name} <span style="font-size:8px;color:var(--dim);">${c.type}</span></div><div class="rev-bar-bg"><div class="rev-bar-fill" style="width:${Math.round(c.amount/maxRev*100)}%"></div></div><div class="client-rev-amount">$${c.amount.toLocaleString()}</div></div>`).join('')
+    document.getElementById('rev-clients-needed').textContent = Math.max(0, Math.ceil((83333-mrr)/1200));
+    const maxMRR = Math.max(...clients.map(c=>c.mrr||0), 1);
+    document.getElementById('rev-breakdown').innerHTML = clients.length
+      ? clients.map(c => `<div class="client-rev-row"><div class="client-rev-name">${c.name}</div><div class="rev-bar-bg"><div class="rev-bar-fill" style="width:${Math.round((c.mrr||0)/maxMRR*100)}%"></div></div><div class="client-rev-amount">$${(c.mrr||0).toLocaleString()}</div></div>`).join('')
       : '<div style="color:var(--dim);font-family:\'DM Mono\',monospace;font-size:10px;padding:20px 0;">No clients yet</div>';
-  }
-
-  function renderCAOTable() {
-    const tbody = document.getElementById('cao-tbody');
-    const empty = document.getElementById('cao-empty');
-    if (!caoClients.length) {
-      if (tbody) tbody.innerHTML = '';
-      if (empty) empty.style.display = 'block';
-      document.getElementById('cao-count').textContent = 0;
-      document.getElementById('cao-mrr').textContent = '$0';
-      document.getElementById('cao-avg').textContent = '$0';
-      document.getElementById('cao-deploys').textContent = 0;
-      document.getElementById('cao-rev-display').textContent = '$0';
-      return;
-    }
-    if (empty) empty.style.display = 'none';
-    const totalCAO = calcCAORev();
-    document.getElementById('cao-count').textContent = caoClients.length;
-    document.getElementById('cao-mrr').textContent = '$' + totalCAO.toLocaleString();
-    document.getElementById('cao-avg').textContent = '$' + Math.round(totalCAO / caoClients.length).toLocaleString();
-    document.getElementById('cao-deploys').textContent = caoClients.length;
-    document.getElementById('cao-rev-display').textContent = '$' + totalCAO.toLocaleString();
-    if (tbody) tbody.innerHTML = caoClients.map(c => `
-      <tr>
-        <td><div class="client-name">${c.name}</div></td>
-        <td style="font-size:12px;color:var(--muted);">${c.industry||'—'}</td>
-        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${c.contract||'—'}</td>
-        <td class="revenue-cell">$${(c.fee||0).toLocaleString()}/mo</td>
-        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${c.market||'—'}</td>
-        <td><div style="display:flex;align-items:center;gap:6px;"><div class="pulse"></div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--green);">Active</span></div></td>
-      </tr>`).join('');
   }
 
   function renderAgentsView() {
@@ -875,7 +765,7 @@
   }
 
   // ── VIEWS ───────────────────────────────────────────────────────
-  const viewTitles = { dashboard:'Dashboard', leads:'Leads', clients:'Clients', cao:'CAO Clients', revenue:'Revenue', agents:'Agents', settings:'Settings' };
+  const viewTitles = { dashboard:'Dashboard', leads:'Leads', clients:'Clients', revenue:'Revenue', agents:'Agents', settings:'Settings' };
   function showView(id, el) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -987,39 +877,21 @@
     const name = document.getElementById('nc-name').value.trim() || 'New Client';
     const industry = document.getElementById('nc-industry').value.trim() || 'Business';
     const email = document.getElementById('nc-email').value.trim() || '';
-    const service = document.getElementById('nc-service').value;
-
-    if (service === 'cao') {
-      const fee = parseInt(document.getElementById('nc-cao-fee').value) || 5000;
-      const market = document.getElementById('nc-market').value;
-      const contract = document.getElementById('nc-contract').value;
-      caoClients.push({
-        id: Date.now(), name, industry, email, fee, market, contract,
-        since: new Date().toLocaleDateString('en-GB', {month:'short', year:'numeric'})
-      });
-    } else {
-      const plan = document.getElementById('nc-plan').value;
-      const agents = document.getElementById('nc-agents').value;
-      const mrrMap = { Starter:499, Growth:999, Enterprise:2400 };
-      clients.push({
-        id: Date.now(), name, industry, email, plan,
-        mrr: mrrMap[plan], conversations: 0, sat: 90,
-        agents, since: new Date().toLocaleDateString('en-GB', {month:'short', year:'numeric'}),
-        logs: ['Client onboarded — agent configuring']
-      });
-    }
+    const plan = document.getElementById('nc-plan').value;
+    const agents = document.getElementById('nc-agents').value;
+    const mrrMap = { Starter:499, Growth:999, Enterprise:2400 };
+    clients.push({
+      id: Date.now(), name, industry, email, plan,
+      mrr: mrrMap[plan], conversations: 0, sat: 90,
+      agents, since: new Date().toLocaleDateString('en-GB', {month:'short', year:'numeric'}),
+      logs: ['Client onboarded — agent configuring']
+    });
     saveData();
     closeModal('nc-modal');
     document.getElementById('nc-name').value = '';
     document.getElementById('nc-industry').value = '';
     document.getElementById('nc-email').value = '';
     updateAll();
-  }
-
-  function openNewCAOClient() {
-    document.getElementById('nc-service').value = 'cao';
-    toggleServiceFields();
-    document.getElementById('nc-modal').classList.add('open');
   }
 
   // Don't auto-run updateAll — wait for password
